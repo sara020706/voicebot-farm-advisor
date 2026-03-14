@@ -1,0 +1,14 @@
+fastapi
+uvicorn[standard]
+pydantic
+pydantic-settings
+python-dotenv
+supabase
+passlib[bcrypt]
+python-jose[cryptography]
+requests
+scikit-learn
+pandas
+numpy
+python-multipart
+strawberry-graphql[fastapi]

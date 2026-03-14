@@ -1,0 +1,32 @@
+[
+  {
+    "id": 1,
+    "name": "PM-KISAN",
+    "type": "Direct Benefit Transfer",
+    "description": "Income support scheme providing ₹6000 per year to small and marginal farmers",
+    "benefit": "₹6000 per year in three installments",
+    "applies_to": ["all"],
+    "states": ["all"],
+    "link": "https://pmkisan.gov.in/"
+  },
+  {
+    "id": 2,
+    "name": "Crop Insurance Scheme",
+    "type": "Insurance",
+    "description": "Provides insurance coverage for crop losses due to natural calamities",
+    "benefit": "Up to 100% coverage for crop losses",
+    "applies_to": ["rice", "wheat", "cotton", "sugarcane"],
+    "states": ["all"],
+    "link": "https://pmfby.gov.in/"
+  },
+  {
+    "id": 3,
+    "name": "Soil Health Card Scheme",
+    "type": "Advisory",
+    "description": "Provides soil testing and nutrient recommendations",
+    "benefit": "Free soil testing and fertilizer recommendations",
+    "applies_to": ["all"],
+    "states": ["all"],
+    "link": "https://soilhealth.dac.gov.in/"
+  }
+]
