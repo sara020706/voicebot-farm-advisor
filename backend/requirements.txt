@@ -1,0 +1,15 @@
+fastapi
+uvicorn[standard]
+pydantic
+pydantic-settings
+pydantic[email]
+python-dotenv
+scikit-learn
+pandas
+numpy
+requests
+python-jose[cryptography]
+passlib[bcrypt]
+bcrypt==4.1.3
+python-multipart
+supabase

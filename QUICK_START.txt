@@ -1,0 +1,46 @@
+╔════════════════════════════════════════════════════════════╗
+║              VOICEBOT - QUICK START GUIDE                  ║
+╚════════════════════════════════════════════════════════════╝
+
+✅ VERIFIED STEPS TO RUN:
+
+1. Double-click: scripts/run_all.bat
+2. Wait for: "VITE v5.x ready" in frontend terminal
+3. Browser opens automatically to: http://localhost:5173
+4. You should see: VoiceBot login page with green theme
+
+═══════════════════════════════════════════════════════════
+
+🌐 ACCESS POINTS:
+
+Frontend:  http://localhost:5173
+Backend:   http://localhost:5000
+API Docs:  http://localhost:5000/docs
+Health:    http://localhost:5000/health
+
+═══════════════════════════════════════════════════════════
+
+🛑 TO STOP:
+
+- Press Ctrl+C in each terminal window
+- Or double-click: STOP_VOICEBOT.bat
+
+═══════════════════════════════════════════════════════════
+
+🔧 FIXES APPLIED:
+
+✅ Fixed port from 8080 to 5173 in vite.config.ts
+✅ Added API proxy to prevent CORS errors
+✅ Fixed Tailwind content paths
+✅ Updated page title to "VoiceBot"
+✅ Added node_modules check to speed up startup
+
+═══════════════════════════════════════════════════════════
+
+📚 DOCUMENTATION:
+
+- HOW_TO_RUN.md - Detailed running instructions
+- DIAGNOSIS_SUMMARY.md - Complete fix details
+- FRONTEND_FIXES_APPLIED.md - Technical explanations
+
+═══════════════════════════════════════════════════════════
