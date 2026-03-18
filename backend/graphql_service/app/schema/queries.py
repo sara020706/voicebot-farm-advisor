@@ -2,9 +2,7 @@ import strawberry
 from typing import List, Optional
 from strawberry.types import Info
 import sys, os
-# Add the backend root to Python path to access shared modules
-backend_root = os.path.join(os.path.dirname(__file__), '../../..')
-sys.path.insert(0, backend_root)
+sys.path.append(os.path.join(os.path.dirname(__file__), '../../..'))
 from shared.database import supabase
 from .types import UserType, ScanType, FertilizerLogType, SchemeType
 import json

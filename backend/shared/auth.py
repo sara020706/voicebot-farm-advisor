@@ -4,7 +4,9 @@ from passlib.context import CryptContext
 import os
 from dotenv import load_dotenv
 
-load_dotenv()
+# Load .env from backend directory
+env_path = os.path.join(os.path.dirname(__file__), '../.env')
+load_dotenv(dotenv_path=env_path, override=True)
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret")

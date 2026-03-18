@@ -4,9 +4,7 @@ Fertilizer recommendation service - business logic for fertilizer rules
 
 from app.models.fertilizer import FertilizerInput, FertilizerResult
 import sys, os
-# Add the backend root to Python path to access shared modules
-backend_root = os.path.join(os.path.dirname(__file__), '../../..')
-sys.path.insert(0, backend_root)
+sys.path.append(os.path.join(os.path.dirname(__file__), '../../..'))
 from shared.database import supabase
 
 

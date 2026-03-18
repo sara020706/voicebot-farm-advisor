@@ -59,14 +59,25 @@ export default function Login({ onLogin, onGoRegister }: Props) {
           </div>
 
           <button
-            onClick={() => {
-              setToken('demo-token');
-              setUser({ name: 'Demo Farmer', email: 'demo@voicebot.in', state: 'Maharashtra' });
-              onLogin();
+            onClick={async () => {
+              setLoading(true);
+              try {
+                // Try to login with demo account
+                const data = await apiLogin('demo@voicebot.in', 'demo123');
+                setToken(data.token);
+                setUser(data.user);
+                showToast('Demo mode activated!', 'success');
+                onLogin();
+              } catch (e: any) {
+                showToast('Demo account not found. Please register first.', 'error');
+              } finally {
+                setLoading(false);
+              }
             }}
-            className="mt-6 w-full h-12 rounded-xl border border-border text-foreground font-medium transition-all duration-200 hover:bg-muted"
+            disabled={loading}
+            className="mt-6 w-full h-12 rounded-xl border border-border text-foreground font-medium transition-all duration-200 hover:bg-muted disabled:opacity-50"
           >
-            Skip to App →
+            {loading ? <Spinner /> : 'Demo Login →'}
           </button>
         </div>
       </div>
