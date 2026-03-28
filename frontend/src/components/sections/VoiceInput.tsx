@@ -1,137 +1,646 @@
-import { useState, useRef, useEffect } from 'react';
-import { Lang, TRANSLATIONS } from '@/lib/translations';
-import { SoilValues } from './CropAdvisor';
+import { useState, useRef, useEffect } from "react";
+import { apiPredict, apiFertilizer } from "../../lib/api";
+import { getLang, addToHistory } from "../../lib/store";
 
-interface Props {
-  lang: Lang;
-  onParsed: (values: Partial<SoilValues>) => void;
+interface VoiceInputProps {
   onNavigate: (section: string) => void;
-  onPredictionReady?: (cropName: string) => void;
+  lang: string;
 }
 
-const LANG_CODES: Record<string, string> = { en: 'en-IN', hi: 'hi-IN', ta: 'ta-IN' };
+interface SoilValues {
+  N?: number;
+  P?: number;
+  K?: number;
+  pH?: number;
+  temperature?: number;
+  humidity?: number;
+  rainfall?: number;
+}
 
-export default function VoiceInput({ lang, onParsed, onNavigate, onPredictionReady }: Props) {
-  const t = TRANSLATIONS[lang];
-  const [status, setStatus] = useState<'idle' | 'listening' | 'processing' | 'done' | 'speaking'>('idle');
-  const [transcript, setTranscript] = useState('');
+interface Message {
+  role: "user" | "assistant";
+  content: string;
+  timestamp: Date;
+}
+
+interface ClaudeResponse {
+  extracted: SoilValues;
+  missing: string[];
+  followup: string;
+  lang: string;
+  complete: boolean;
+  explanation?: string;
+}
+
+async function callClaude(
+  messages: Array<{ role: string; content: string }>,
+  currentValues: SoilValues,
+  mode: "extract" | "explain",
+  predictionResult?: { crop: string; confidence: number; deficiencies: any[] }
+): Promise<ClaudeResponse> {
+  const systemPrompt = mode === "extract" ? `
+You are a multilingual agricultural soil advisor for Indian farmers. Your job is to extract soil parameters from natural farmer speech and ask for missing ones.
+
+Current collected values: ${JSON.stringify(currentValues)}
+
+RULES:
+1. Detect the language the farmer is using (en, hi, ta) and ALWAYS respond in that same language
+2. Extract these 7 values from speech: N (Nitrogen 0-140), P (Phosphorus 0-140), K (Potassium 0-140), pH (0-14), temperature (Celsius), humidity (%), rainfall (mm)
+3. Convert descriptive language to numbers:
+   - "low nitrogen" / "नाइट्रोजन कम है" / "நைட்ரஜன் குறைவு" → N: 25
+   - "high nitrogen" → N: 100
+   - "dry soil" / "मिट्टी सूखी है" → humidity: 25
+   - "very rainy area" → rainfall: 250
+   - "hot climate" → temperature: 35
+   - "normal/medium" for any value → use midpoint of range
+4. Only ask for values that are genuinely missing — do not re-ask for collected values
+5. Ask for maximum 2-3 missing values at once — do not overwhelm
+6. Be conversational and friendly — speak like a local agricultural advisor
+7. If farmer seems confused, explain what the value means simply
+
+Return ONLY valid JSON with this exact structure:
+{
+  "extracted": {"N": number|null, "P": number|null, "K": number|null, "pH": number|null, "temperature": number|null, "humidity": number|null, "rainfall": number|null},
+  "missing": ["list of still missing field names"],
+  "followup": "next question to ask farmer in their language",
+  "lang": "en|hi|ta",
+  "complete": true|false
+}
+
+Return null for values not yet provided. Do not include extracted values in missing array.
+` : `
+You are a multilingual agricultural advisor explaining crop recommendations to Indian farmers. Always respond in the same language the farmer has been using: ${getLang() === 'hi' ? 'Hindi' : getLang() === 'ta' ? 'Tamil' : 'English'}
+
+Prediction result: ${JSON.stringify(predictionResult)}
+Soil values used: ${JSON.stringify(currentValues)}
+
+Generate a warm, helpful explanation that covers:
+1. Which crop was recommended and confidence level
+2. Why this crop suits their soil (mention 2-3 specific reasons from their soil values)
+3. Key fertilizer recommendation (most deficient nutrient)
+4. Best planting season for this crop in India
+5. One practical tip for this crop
+
+Keep it conversational — speak like a knowledgeable local farmer would. Maximum 4-5 sentences. Do not use technical jargon.
+
+Also after the explanation add: "क्या आप कुछ और जानना चाहते हैं?" (or equivalent in their language) to invite follow-up questions.
+
+Return ONLY valid JSON:
+{
+  "explanation": "full explanation in farmer's language",
+  "lang": "en|hi|ta",
+  "complete": true
+}
+`;
+
+  const ANTHROPIC_API_KEY = import.meta.env.VITE_ANTHROPIC_API_KEY || "";
+
+  const response = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-api-key": ANTHROPIC_API_KEY,
+      "anthropic-version": "2023-06-01"
+    },
+    body: JSON.stringify({
+      model: "claude-sonnet-4-20250514",
+      max_tokens: 1000,
+      system: systemPrompt,
+      messages: messages.map(m => ({ role: m.role, content: m.content }))
+    })
+  });
+
+  if (!response.ok) {
+    throw new Error(`Claude API error: ${response.status}`);
+  }
+
+  const data = await response.json();
+  const text = data.content?.[0]?.text ?? "{}";
+
+  try {
+    const clean = text.replace(/```json\n?|\n?```/g, "").trim();
+    const parsed = JSON.parse(clean);
+    return {
+      extracted: parsed.extracted ?? {},
+      missing: parsed.missing ?? [],
+      followup: parsed.followup ?? parsed.explanation ?? "",
+      lang: parsed.lang ?? "en",
+      complete: parsed.complete ?? false,
+      explanation: parsed.explanation,
+    };
+  } catch {
+    return {
+      extracted: {},
+      missing: ["N", "P", "K", "pH", "temperature", "humidity", "rainfall"],
+      followup: "Could you please describe your soil conditions?",
+      lang: "en",
+      complete: false,
+    };
+  }
+}
+
+function speak(text: string, lang: string) {
+  window.speechSynthesis.cancel();
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.lang = lang === "hi" ? "hi-IN" : lang === "ta" ? "ta-IN" : "en-IN";
+  utterance.rate = 0.85;
+  utterance.pitch = 1.0;
+  window.speechSynthesis.speak(utterance);
+}
+
+export default function VoiceInput({ onNavigate, lang: currentLang }: VoiceInputProps) {
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [soilValues, setSoilValues] = useState<SoilValues>({});
+  const [isListening, setIsListening] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [status, setStatus] = useState("Tap the mic to start");
+  const [phase, setPhase] = useState<"collecting" | "predicting" | "explaining" | "followup">("collecting");
+  const [prediction, setPrediction] = useState<{ crop: string; confidence: number } | null>(null);
+  const [deficiencies, setDeficiencies] = useState<any[]>([]);
+  const [detectedLang, setDetectedLang] = useState(currentLang);
+  const [conversationHistory, setConversationHistory] = useState<Array<{ role: string; content: string }>>([]);
   const recognitionRef = useRef<any>(null);
+  const chatEndRef = useRef<HTMLDivElement>(null);
 
-  const statusLabels = { 
-    idle: 'Tap to speak', 
-    listening: 'Listening…', 
-    processing: 'Processing…', 
-    done: 'Done!',
-    speaking: 'Speaking result…'
-  };
-
-  // Listen for prediction results
   useEffect(() => {
-    const handlePrediction = (event: CustomEvent) => {
-      const cropName = event.detail.crop;
-      if (cropName && status === 'done') {
-        speakResult(cropName);
-      }
-    };
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
 
-    window.addEventListener('cropPredictionReady' as any, handlePrediction);
-    return () => window.removeEventListener('cropPredictionReady' as any, handlePrediction);
-  }, [status, lang]);
-
-  const speakResult = (cropName: string) => {
-    setStatus('speaking');
-    const utterance = new SpeechSynthesisUtterance(
-      `Recommended crop is ${cropName}. Please grow ${cropName} based on your soil data.`
-    );
-    utterance.lang = lang === 'hi' ? 'hi-IN' : lang === 'ta' ? 'ta-IN' : 'en-IN';
-    utterance.onend = () => {
-      setStatus('done');
-    };
-    window.speechSynthesis.speak(utterance);
+  const addMessage = (role: "user" | "assistant", content: string) => {
+    setMessages(prev => [...prev, { role, content, timestamp: new Date() }]);
   };
 
   const startListening = () => {
-    const SR = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
-    if (!SR) { setTranscript('Speech recognition not supported'); return; }
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      setStatus("Speech recognition not supported in this browser. Please use Chrome.");
+      return;
+    }
 
-    const recognition = new SR();
-    recognition.lang = LANG_CODES[lang] || 'en-IN';
+    const recognition = new SpeechRecognition();
     recognition.continuous = false;
     recognition.interimResults = false;
-    recognitionRef.current = recognition;
+    recognition.lang = detectedLang === "hi" ? "hi-IN" : detectedLang === "ta" ? "ta-IN" : "en-IN";
 
-    recognition.onstart = () => setStatus('listening');
-    recognition.onresult = (e: any) => {
-      setStatus('processing');
-      const text = e.results[0][0].transcript;
-      setTranscript(text);
-
-      const nums = text.match(/[\d.]+/g)?.map(Number) || [];
-      const keys: (keyof SoilValues)[] = ['N', 'P', 'K', 'pH', 'temperature', 'humidity', 'rainfall'];
-      const parsed: Partial<SoilValues> = {};
-      nums.forEach((n, i) => { if (i < keys.length) parsed[keys[i]] = n; });
-
-      if (Object.keys(parsed).length > 0) onParsed(parsed);
-      setStatus('done');
+    recognition.onstart = () => {
+      setIsListening(true);
+      setStatus("Listening...");
     };
-    recognition.onerror = () => { setStatus('idle'); setTranscript('Error — try again'); };
-    recognition.onend = () => { if (status === 'listening') setStatus('idle'); };
+
+    recognition.onresult = async (event: any) => {
+      const text = event.results[0][0].transcript;
+      setIsListening(false);
+      await processUserInput(text);
+    };
+
+    recognition.onerror = (event: any) => {
+      setIsListening(false);
+      setStatus(`Error: ${event.error}. Tap mic to try again.`);
+    };
+
+    recognition.onend = () => setIsListening(false);
+
+    recognitionRef.current = recognition;
     recognition.start();
   };
 
-  const stopListening = () => {
-    recognitionRef.current?.stop();
-    setStatus('idle');
+  const processUserInput = async (userText: string) => {
+    setIsProcessing(true);
+    addMessage("user", userText);
+
+    const updatedHistory = [
+      ...conversationHistory,
+      { role: "user", content: userText }
+    ];
+    setConversationHistory(updatedHistory);
+
+    try {
+      if (phase === "followup" && prediction) {
+        const response = await fetch("https://api.anthropic.com/v1/messages", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-api-key": import.meta.env.VITE_ANTHROPIC_API_KEY || "",
+            "anthropic-version": "2023-06-01"
+          },
+          body: JSON.stringify({
+            model: "claude-sonnet-4-20250514",
+            max_tokens: 500,
+            system: `You are a multilingual agricultural advisor. Answer questions about this crop recommendation in ${detectedLang === 'hi' ? 'Hindi' : detectedLang === 'ta' ? 'Tamil' : 'English'}.
+            
+Recommendation: ${prediction.crop} with ${prediction.confidence}% confidence.
+Soil: ${JSON.stringify(soilValues)}
+Fertilizer advice: ${JSON.stringify(deficiencies)}
+Keep answers short, practical, and in simple language a farmer would understand.`,
+            messages: updatedHistory
+          })
+        });
+        const data = await response.json();
+        const answer = data.content?.[0]?.text ?? "I could not process that question.";
+        addMessage("assistant", answer);
+        setConversationHistory([...updatedHistory, { role: "assistant", content: answer }]);
+        speak(answer, detectedLang);
+        setStatus("Tap mic to ask another question");
+      } else {
+        const result = await callClaude(updatedHistory, soilValues, "extract");
+        setDetectedLang(result.lang);
+
+        const newValues = { ...soilValues };
+        Object.entries(result.extracted).forEach(([key, value]) => {
+          if (value !== null && value !== undefined && (newValues as any)[key] === undefined) {
+            (newValues as any)[key] = value;
+          }
+        });
+        setSoilValues(newValues);
+
+        const collectedFields = Object.keys(newValues).filter(k => (newValues as any)[k] !== undefined);
+        const allFields = ["N", "P", "K", "pH", "temperature", "humidity", "rainfall"];
+        const stillMissing = allFields.filter(f => (newValues as any)[f] === undefined);
+
+        if (stillMissing.length === 0) {
+          addMessage("assistant", result.followup || "Great! I have all the information. Analyzing your soil now...");
+          setConversationHistory([...updatedHistory, { role: "assistant", content: result.followup || "" }]);
+          await runPrediction(newValues, result.lang);
+        } else {
+          const followupText = result.followup;
+          addMessage("assistant", followupText);
+          const newHistory = [...updatedHistory, { role: "assistant", content: followupText }];
+          setConversationHistory(newHistory);
+
+          setStatus(`Collected: ${collectedFields.join(", ")} · Need: ${stillMissing.join(", ")}`);
+
+          setIsSpeaking(true);
+          speak(followupText, result.lang);
+          setTimeout(() => setIsSpeaking(false), 3000);
+        }
+      }
+    } catch (err: any) {
+      const errorMsg = "Sorry, I had trouble understanding that. Please try again.";
+      addMessage("assistant", errorMsg);
+      setStatus("Error — tap mic to retry");
+      speak(errorMsg, detectedLang);
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
+  const runPrediction = async (values: SoilValues, lang: string) => {
+    setPhase("predicting");
+    setStatus("Analyzing soil and finding best crop...");
+
+    const predictingMsg = lang === "hi"
+      ? "सभी जानकारी मिल गई। आपकी मिट्टी का विश्लेषण हो रहा है..."
+      : lang === "ta"
+      ? "அனைத்து தகவல்களும் கிடைத்தன. உங்கள் மண்ணை பகுப்பாய்வு செய்கிறேன்..."
+      : "Got all the information. Analyzing your soil now...";
+
+    speak(predictingMsg, lang);
+
+    try {
+      const predResult = await apiPredict({
+        N: values.N!, P: values.P!, K: values.K!,
+        pH: values.pH!, temperature: values.temperature!,
+        humidity: values.humidity!, rainfall: values.rainfall!
+      });
+
+      const fertResult = await apiFertilizer({
+        N: values.N!, P: values.P!, K: values.K!,
+        crop: predResult.crop
+      });
+
+      setPrediction(predResult);
+      setDeficiencies(fertResult.deficiencies ?? []);
+
+      addToHistory({
+        date: new Date().toISOString(),
+        crop: predResult.crop,
+        confidence: predResult.confidence,
+        N: values.N!, P: values.P!, K: values.K!, ph: values.pH
+      });
+      localStorage.setItem("vb_last_crop", predResult.crop);
+
+      setPhase("explaining");
+      await generateExplanation(values, predResult, fertResult.deficiencies ?? [], lang);
+
+    } catch (err: any) {
+      const errorMsg = "Sorry, prediction failed. Please check if the server is running.";
+      addMessage("assistant", errorMsg);
+      setStatus("Prediction failed — check backend connection");
+      speak(errorMsg, lang);
+      setPhase("collecting");
+    }
+  };
+
+  const generateExplanation = async (
+    values: SoilValues,
+    pred: { crop: string; confidence: number },
+    defic: any[],
+    lang: string
+  ) => {
+    setStatus("Generating explanation...");
+
+    try {
+      const result = await callClaude(
+        [{ role: "user", content: `Explain the recommendation for ${pred.crop}` }],
+        values,
+        "explain",
+        { crop: pred.crop, confidence: pred.confidence, deficiencies: defic }
+      );
+
+      addMessage("assistant", result.explanation ?? result.followup);
+      setConversationHistory(prev => [...prev, {
+        role: "assistant",
+        content: result.explanation ?? result.followup
+      }]);
+
+      setIsSpeaking(true);
+      speak(result.explanation ?? result.followup, lang);
+
+      setTimeout(() => {
+        setIsSpeaking(false);
+        setPhase("followup");
+        setStatus("Tap mic to ask a follow-up question");
+      }, 8000);
+
+    } catch {
+      const fallback = lang === "hi"
+        ? `आपकी मिट्टी के लिए ${pred.crop} सबसे अच्छा है। ${pred.confidence}% विश्वास के साथ।`
+        : lang === "ta"
+        ? `உங்கள் மண்ணுக்கு ${pred.crop} சிறந்தது. ${pred.confidence}% நம்பிக்கையுடன்.`
+        : `${pred.crop} is recommended for your soil with ${pred.confidence}% confidence.`;
+
+      addMessage("assistant", fallback);
+      speak(fallback, lang);
+      setPhase("followup");
+      setStatus("Tap mic to ask a follow-up question");
+    }
+  };
+
+  const resetConversation = () => {
+    setMessages([]);
+    setSoilValues({});
+    setConversationHistory([]);
+    setPhase("collecting");
+    setPrediction(null);
+    setDeficiencies([]);
+    setStatus("Tap the mic to start");
+    window.speechSynthesis.cancel();
+  };
+
+  const getStatusColor = () => {
+    if (isListening) return "#1d9e75";
+    if (isProcessing || isSpeaking) return "#378add";
+    if (phase === "followup") return "#ba7517";
+    return "var(--color-text-secondary)";
+  };
+
+  const completedFields = Object.keys(soilValues).filter(k => (soilValues as any)[k] !== undefined);
+  const totalFields = 7;
+  const progress = (completedFields.length / totalFields) * 100;
+
   return (
-    <div>
-      <h2 className="font-heading text-2xl font-bold mb-8">{t.speakYourSoil}</h2>
-      <div className="flex flex-col items-center">
-        <div className="relative">
-          {(status === 'listening' || status === 'speaking') && (
-            <div className="absolute inset-0 rounded-full bg-accent/30 animate-pulse-ring" />
-          )}
+    <div style={{ maxWidth: "680px", margin: "0 auto", padding: "0 0 2rem" }}>
+      
+      <div style={{ marginBottom: "1.5rem" }}>
+        <h2 style={{ fontSize: "1.4rem", fontWeight: 500, color: "var(--color-text-primary)", margin: "0 0 4px" }}>
+          Voice Assistant
+        </h2>
+        <p style={{ fontSize: "13px", color: "var(--color-text-secondary)", margin: 0 }}>
+          Speak naturally in Hindi, Tamil, or English — I will understand
+        </p>
+      </div>
+
+      <div style={{ display: "flex", gap: "8px", marginBottom: "1.25rem" }}>
+        {["en", "hi", "ta"].map(lang => (
           <button
-            onClick={status === 'listening' ? stopListening : startListening}
-            disabled={status === 'speaking'}
-            className="relative w-[100px] h-[100px] rounded-full bg-primary text-primary-foreground flex items-center justify-center transition-all duration-200 hover:opacity-90 disabled:opacity-50"
+            key={lang}
+            onClick={() => setDetectedLang(lang)}
+            style={{
+              padding: "4px 12px",
+              borderRadius: "20px",
+              border: `1.5px solid ${detectedLang === lang ? "#1a4d2e" : "var(--color-border-tertiary)"}`,
+              background: detectedLang === lang ? "#1a4d2e" : "transparent",
+              color: detectedLang === lang ? "#fff" : "var(--color-text-secondary)",
+              fontSize: "12px",
+              cursor: "pointer",
+              fontWeight: detectedLang === lang ? 500 : 400,
+            }}
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/>
-              <path d="M19 10v2a7 7 0 01-14 0v-2"/>
-              <line x1="12" y1="19" x2="12" y2="23"/>
-              <line x1="8" y1="23" x2="16" y2="23"/>
-            </svg>
+            {lang === "en" ? "English" : lang === "hi" ? "हिन्दी" : "தமிழ்"}
           </button>
+        ))}
+      </div>
+
+      {completedFields.length > 0 && (
+        <div style={{ marginBottom: "1.25rem" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px" }}>
+            <span style={{ fontSize: "11px", color: "var(--color-text-secondary)" }}>
+              Soil data collected
+            </span>
+            <span style={{ fontSize: "11px", fontWeight: 500, color: "#1a4d2e" }}>
+              {completedFields.length}/{totalFields}
+            </span>
+          </div>
+          <div style={{ height: "4px", background: "var(--color-border-tertiary)", borderRadius: "2px", overflow: "hidden" }}>
+            <div style={{
+              height: "100%",
+              width: `${progress}%`,
+              background: "#1a4d2e",
+              borderRadius: "2px",
+              transition: "width 0.4s ease"
+            }} />
+          </div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "4px", marginTop: "6px" }}>
+            {Object.entries(soilValues).map(([key, val]) => val !== undefined && (
+              <span key={key} style={{
+                fontSize: "10px",
+                padding: "2px 7px",
+                borderRadius: "4px",
+                background: "#eaf3de",
+                color: "#27500a",
+                fontWeight: 500
+              }}>
+                {key}: {val}
+              </span>
+            ))}
+          </div>
         </div>
+      )}
 
-        <p className="mt-4 text-sm font-medium text-muted-foreground">{statusLabels[status]}</p>
-
-        {transcript && (
-          <div className="mt-6 w-full max-w-md bg-muted rounded-2xl p-4 italic text-sm text-foreground/80">
-            {transcript}
+      <div style={{
+        background: "var(--color-background-primary)",
+        border: "0.5px solid var(--color-border-tertiary)",
+        borderRadius: "16px",
+        padding: "1rem",
+        minHeight: "280px",
+        maxHeight: "380px",
+        overflowY: "auto",
+        marginBottom: "1.25rem",
+        display: "flex",
+        flexDirection: "column",
+        gap: "10px"
+      }}>
+        {messages.length === 0 && (
+          <div style={{ textAlign: "center", margin: "auto", color: "var(--color-text-tertiary)" }}>
+            <div style={{ fontSize: "32px", marginBottom: "8px" }}>🎙️</div>
+            <p style={{ fontSize: "13px", margin: 0 }}>
+              {detectedLang === "hi"
+                ? "माइक दबाएं और अपनी मिट्टी के बारे में बताएं"
+                : detectedLang === "ta"
+                ? "மைக்கை அழுத்தி உங்கள் மண்ணைப் பற்றி சொல்லுங்கள்"
+                : "Tap the mic and describe your soil or farm"}
+            </p>
+            <p style={{ fontSize: "11px", margin: "4px 0 0", color: "var(--color-text-tertiary)" }}>
+              {detectedLang === "hi"
+                ? "उदाहरण: 'मेरी मिट्टी में नाइट्रोजन कम है, pH 6.5 है'"
+                : detectedLang === "ta"
+                ? "உதாரணம்: 'என் மண்ணில் நைட்ரஜன் குறைவு, pH 6.5'"
+                : "Example: 'My soil has low nitrogen and pH is around 6.5'"}
+            </p>
           </div>
         )}
 
-        {status === 'done' && !transcript.includes('Error') && (
-          <button onClick={() => onNavigate('cropAdvisor')} className="vb-btn-accent mt-6">
-            Fields updated — go to Crop Advisor →
-          </button>
-        )}
+        {messages.map((msg, i) => (
+          <div key={i} style={{
+            display: "flex",
+            justifyContent: msg.role === "user" ? "flex-end" : "flex-start",
+          }}>
+            <div style={{
+              maxWidth: "80%",
+              padding: "8px 12px",
+              borderRadius: msg.role === "user" ? "16px 16px 4px 16px" : "16px 16px 16px 4px",
+              background: msg.role === "user" ? "#1a4d2e" : "var(--color-background-secondary)",
+              color: msg.role === "user" ? "#fff" : "var(--color-text-primary)",
+              fontSize: "13px",
+              lineHeight: "1.5",
+            }}>
+              {msg.content}
+            </div>
+          </div>
+        ))}
 
-        {status === 'speaking' && (
-          <div className="flex items-end justify-center gap-1.5 mt-6 h-10">
-            {[0, 1, 2, 3, 4].map(i => (
-              <div
-                key={i}
-                className="w-2 bg-accent rounded-full animate-sound-bar"
-                style={{ animationDelay: `${i * 0.15}s`, height: '8px' }}
-              />
+        {isProcessing && (
+          <div style={{ display: "flex", gap: "4px", padding: "8px 12px" }}>
+            {[0, 1, 2].map(i => (
+              <div key={i} style={{
+                width: "6px", height: "6px", borderRadius: "50%",
+                background: "var(--color-text-tertiary)",
+                animation: `bounce 1s ease-in-out ${i * 0.2}s infinite`
+              }} />
             ))}
           </div>
         )}
+        <div ref={chatEndRef} />
       </div>
+
+      {prediction && (
+        <div style={{
+          background: "#eaf3de",
+          border: "1px solid #c0dd97",
+          borderRadius: "12px",
+          padding: "1rem",
+          marginBottom: "1.25rem",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center"
+        }}>
+          <div>
+            <p style={{ fontSize: "11px", color: "#3b6d11", margin: "0 0 2px", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+              Recommended crop
+            </p>
+            <p style={{ fontSize: "1.4rem", fontWeight: 700, color: "#1a4d2e", margin: 0, textTransform: "capitalize" }}>
+              {prediction.crop}
+            </p>
+          </div>
+          <div style={{ textAlign: "right" }}>
+            <p style={{ fontSize: "11px", color: "#3b6d11", margin: "0 0 2px" }}>Confidence</p>
+            <p style={{ fontSize: "1.2rem", fontWeight: 700, color: "#1a4d2e", margin: 0 }}>
+              {prediction.confidence}%
+            </p>
+          </div>
+        </div>
+      )}
+
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "12px" }}>
+        <button
+          onClick={isListening ? () => recognitionRef.current?.stop() : startListening}
+          disabled={isProcessing || isSpeaking}
+          style={{
+            width: "80px",
+            height: "80px",
+            borderRadius: "50%",
+            border: "none",
+            background: isListening ? "#c0392b" : isProcessing || isSpeaking ? "#888" : "#1a4d2e",
+            cursor: isProcessing || isSpeaking ? "not-allowed" : "pointer",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            transition: "all 0.2s",
+            boxShadow: isListening ? "0 0 0 8px rgba(192,57,43,0.2)" : "none",
+          }}
+        >
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+            {isListening ? (
+              <rect x="6" y="6" width="12" height="12" rx="2" fill="white"/>
+            ) : (
+              <>
+                <rect x="9" y="2" width="6" height="12" rx="3" fill="white"/>
+                <path d="M5 10a7 7 0 0014 0" stroke="white" strokeWidth="2" strokeLinecap="round" fill="none"/>
+                <line x1="12" y1="17" x2="12" y2="21" stroke="white" strokeWidth="2" strokeLinecap="round"/>
+                <line x1="8" y1="21" x2="16" y2="21" stroke="white" strokeWidth="2" strokeLinecap="round"/>
+              </>
+            )}
+          </svg>
+        </button>
+
+        <p style={{ fontSize: "12px", color: getStatusColor(), margin: 0, textAlign: "center", fontWeight: isListening ? 500 : 400 }}>
+          {isListening ? "Listening... tap to stop" : isProcessing ? "Processing..." : isSpeaking ? "Speaking..." : status}
+        </p>
+
+        <div style={{ display: "flex", gap: "8px" }}>
+          {messages.length > 0 && (
+            <button
+              onClick={resetConversation}
+              style={{
+                padding: "6px 16px",
+                borderRadius: "8px",
+                border: "0.5px solid var(--color-border-tertiary)",
+                background: "transparent",
+                color: "var(--color-text-secondary)",
+                fontSize: "12px",
+                cursor: "pointer"
+              }}
+            >
+              Start over
+            </button>
+          )}
+          {prediction && (
+            <button
+              onClick={() => onNavigate("cropAdvisor")}
+              style={{
+                padding: "6px 16px",
+                borderRadius: "8px",
+                border: "none",
+                background: "#1a4d2e",
+                color: "#fff",
+                fontSize: "12px",
+                cursor: "pointer",
+                fontWeight: 500
+              }}
+            >
+              View full analysis →
+            </button>
+          )}
+        </div>
+      </div>
+
+      <style>{`
+        @keyframes bounce {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-4px); }
+        }
+      `}</style>
     </div>
   );
 }

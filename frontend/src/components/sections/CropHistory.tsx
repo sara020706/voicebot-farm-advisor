@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Spinner } from '@/components/Spinner';
 import { useAppToast } from '@/components/Toast';
-import { getToken } from '@/lib/store';
+import { apiHistory } from '@/lib/api';
+import { getHistory } from '@/lib/store';
 
 interface CropHistoryProps {
   onNav: (section: string) => void;
@@ -82,19 +83,11 @@ export default function CropHistory({ onNav, currentLang }: CropHistoryProps) {
   const fetchHistory = async () => {
     setLoading(true);
     try {
-      const token = getToken();
-      if (token) {
-        const res = await fetch('http://localhost:5000/api/history', {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (res.ok) {
-          const data = await res.json();
-          if (data.scans && data.scans.length > 0) {
-            setHistory(data.scans.slice(0, 5));
-            setLoading(false);
-            return;
-          }
-        }
+      const data = await apiHistory();
+      if (data.scans && data.scans.length > 0) {
+        setHistory(data.scans.slice(0, 5));
+        setLoading(false);
+        return;
       }
     } catch (e) {
       // Silently fall back to localStorage
@@ -102,7 +95,7 @@ export default function CropHistory({ onNav, currentLang }: CropHistoryProps) {
 
     // Fallback to localStorage
     try {
-      const local = JSON.parse(localStorage.getItem('vb_history') || '[]');
+      const local = getHistory();
       setHistory(local.slice(0, 5));
     } catch {
       setHistory([]);

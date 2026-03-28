@@ -14,6 +14,7 @@ from app.routers.crop import router as crop_router
 from app.routers.fertilizer import router as fertilizer_router
 from app.routers.weather import router as weather_router
 from app.routers.history import router as history_router
+from app.routers.schemes import router as schemes_router
 
 logger = logging.getLogger(__name__)
 
@@ -57,6 +58,7 @@ app.include_router(crop_router,       prefix="/api",      tags=["Crop Prediction
 app.include_router(fertilizer_router, prefix="/api",      tags=["Fertilizer"])
 app.include_router(weather_router,    prefix="/api",      tags=["Weather"])
 app.include_router(history_router,    prefix="/api",      tags=["History"])
+app.include_router(schemes_router,    prefix="/api",      tags=["Schemes"])
 
 @app.get("/health")
 def health():

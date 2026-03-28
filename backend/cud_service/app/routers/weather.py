@@ -2,29 +2,29 @@
 Weather data routes
 """
 
-from fastapi import APIRouter, Depends, Query, Request
-from app.models.weather import WeatherResult
-from app.dependencies import get_current_user
-from app.services import weather_service
+from fastapi import APIRouter, Request, HTTPException, Query
+from app.services.weather_service import get_weather
+import logging
 
+logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
-@router.get("/weather", response_model=dict)
-async def get_weather(
-    city: str = Query(..., description="City name"),
-    request: Request = None
-):
-    """
-    Get current weather data for a location
-    """
-    result = weather_service.get_weather_data(city)
-    return {
-        "location": result.location,
-        "temperature": result.temperature,
-        "humidity": result.humidity,
-        "description": result.description,
-        "wind_speed": result.wind_speed,
-        "pressure": result.pressure,
-        "icon": result.icon
-    }
+@router.get("/weather")
+async def weather_endpoint(city: str = Query(..., description="City name"), request: Request = None):
+    user_id = getattr(request.state, "user_id", None)
+    
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    
+    if not city:
+        raise HTTPException(status_code=400, detail="City parameter is required")
+    
+    logger.info(f"GET /api/weather — user_id={user_id} city={city}")
+    
+    try:
+        result = get_weather(city)
+        return result
+    except Exception as e:
+        logger.error(f"Weather endpoint error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))

@@ -9,7 +9,9 @@ env_path = os.path.join(os.path.dirname(__file__), '../.env')
 load_dotenv(dotenv_path=env_path, override=True)
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret")
+SECRET_KEY = os.getenv("SECRET_KEY")
+if not SECRET_KEY:
+    raise ValueError("SECRET_KEY environment variable is required in backend/.env")
 ALGORITHM = "HS256"
 EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "10080"))
 

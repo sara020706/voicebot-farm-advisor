@@ -1,20 +1,70 @@
+import { useState, useEffect } from 'react';
 import { Lang, TRANSLATIONS } from '@/lib/translations';
 import { getHistory } from '@/lib/store';
+import { apiHistory } from '@/lib/api';
 
 interface Props {
   lang: Lang;
   onNavigate: (section: string) => void;
 }
 
+interface ScanEntry {
+  date?: string;
+  created_at?: string;
+  crop?: string;
+  recommended_crop?: string;
+  confidence: number;
+  N?: number;
+  n?: number;
+  P?: number;
+  p?: number;
+  K?: number;
+  k?: number;
+}
+
 export default function Dashboard({ lang, onNavigate }: Props) {
   const t = TRANSLATIONS[lang];
-  const history = getHistory();
-  const lastCrop = history[0]?.crop || '—';
-  const scansDone = history.length;
-  const soilScore = history.length > 0
-    ? Math.round(history.slice(0, 5).reduce((s, e) => s + (e.N + e.P + e.K) / 3, 0) / Math.min(history.length, 5))
+  const [loading, setLoading] = useState(true);
+  const [scans, setScans] = useState<ScanEntry[]>([]);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      setLoading(true);
+      try {
+        const data = await apiHistory();
+        if (data.scans && data.scans.length > 0) {
+          setScans(data.scans);
+        } else {
+          setScans(getHistory());
+        }
+      } catch {
+        setScans(getHistory());
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchStats();
+  }, []);
+
+  const lastCrop = localStorage.getItem('vb_last_crop') || scans[0]?.crop || scans[0]?.recommended_crop || '—';
+  const scansDone = scans.length;
+  const soilScore = scans.length > 0
+    ? Math.round(scans.slice(0, 5).reduce((s, e) => s + ((e.N || e.n || 0) + (e.P || e.p || 0) + (e.K || e.k || 0)) / 3, 0) / Math.min(scans.length, 5))
     : 0;
-  const recent = history.slice(0, 3);
+  const recent = scans.slice(0, 3);
+
+  if (loading) {
+    return (
+      <div>
+        <h2 className="font-heading text-2xl font-bold mb-6">{t.dashboard}</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+          {[1, 2, 3].map(i => (
+            <div key={i} className="h-24 bg-gray-200 rounded-2xl animate-pulse" />
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -52,9 +102,9 @@ export default function Dashboard({ lang, onNavigate }: Props) {
               <tbody>
                 {recent.map((r, i) => (
                   <tr key={i} className="border-b border-border last:border-0">
-                    <td className="px-4 py-3">{r.date}</td>
-                    <td className="px-4 py-3 font-medium">{r.crop}</td>
-                    <td className="px-4 py-3">{(r.confidence * 100).toFixed(0)}%</td>
+                    <td className="px-4 py-3">{r.date ? new Date(r.date).toLocaleDateString() : r.created_at ? new Date(r.created_at).toLocaleDateString() : '—'}</td>
+                    <td className="px-4 py-3 font-medium">{r.crop || r.recommended_crop || '—'}</td>
+                    <td className="px-4 py-3">{((r.confidence || 0) * 100).toFixed(0)}%</td>
                   </tr>
                 ))}
               </tbody>
