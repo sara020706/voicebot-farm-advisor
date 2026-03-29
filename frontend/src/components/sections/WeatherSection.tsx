@@ -41,6 +41,9 @@ export default function WeatherSection({ lang, onAutoFill, onNavigate }: Props) 
 
   const autoFill = () => {
     if (!weather) return;
+    localStorage.setItem('vb_weather_temp', weather.temperature.toString());
+    localStorage.setItem('vb_weather_humidity', weather.humidity.toString());
+    localStorage.setItem('vb_weather_rainfall', weather.rainfall.toString());
     onAutoFill({ temperature: weather.temperature, humidity: weather.humidity, rainfall: weather.rainfall });
     showToast('Weather data applied to crop form!', 'success');
     onNavigate('cropAdvisor');

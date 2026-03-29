@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Spinner } from '@/components/Spinner';
 import { useAppToast } from '@/components/Toast';
-import { getToken, getUser } from '@/lib/store';
+import { getUser } from '@/lib/store';
+import { apiSchemes } from '@/lib/api';
 
 interface GovernmentSchemesProps {
   currentLang: 'en' | 'hi' | 'ta';
@@ -133,19 +134,9 @@ export default function GovernmentSchemes({ currentLang }: GovernmentSchemesProp
     setLoading(true);
     setSearched(true);
     try {
-      const token = getToken();
-      const res = await fetch(
-        `http://localhost:5000/api/schemes?crop=${encodeURIComponent(crop)}&state=${encodeURIComponent(state)}`,
-        { headers: token ? { Authorization: `Bearer ${token}` } : {} }
-      );
-
-      if (res.ok) {
-        const data = await res.json();
-        if (data.schemes && data.schemes.length > 0) {
-          setSchemes(data.schemes);
-        } else {
-          setSchemes(FALLBACK_SCHEMES);
-        }
+      const data = await apiSchemes(crop, state);
+      if (data.schemes && data.schemes.length > 0) {
+        setSchemes(data.schemes);
       } else {
         setSchemes(FALLBACK_SCHEMES);
       }

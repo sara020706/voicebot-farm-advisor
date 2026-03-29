@@ -1,87 +1,95 @@
-"""
-Fertilizer recommendation service - business logic for fertilizer rules
-"""
-
-from app.models.fertilizer import FertilizerInput, FertilizerResult
-import sys, os
+import sys, os, json, logging
 sys.path.append(os.path.join(os.path.dirname(__file__), '../../..'))
 from shared.database import supabase
 
+logger = logging.getLogger(__name__)
 
-def recommend_fertilizer(fertilizer_data: FertilizerInput, user_id: str) -> dict:
-    """
-    Recommend fertilizer based on soil and crop data and save to database
-    """
-    # Simple rule-based fertilizer recommendation
-    n_deficit = max(0, 40 - fertilizer_data.N)
-    p_deficit = max(0, 30 - fertilizer_data.P)
-    k_deficit = max(0, 35 - fertilizer_data.K)
-    
-    # Determine primary nutrient needed
-    if n_deficit > p_deficit and n_deficit > k_deficit:
-        fertilizer = "Urea"
-        nutrient = "Nitrogen"
-        amount = f"{n_deficit * 2.5:.1f} kg/acre"
-    elif p_deficit > k_deficit:
-        fertilizer = "DAP (Diammonium Phosphate)"
-        nutrient = "Phosphorus"
-        amount = f"{p_deficit * 3:.1f} kg/acre"
-    else:
-        fertilizer = "Muriate of Potash"
-        nutrient = "Potassium"
-        amount = f"{k_deficit * 2:.1f} kg/acre"
-    
-    # Save fertilizer log to database
-    log_data = {
-        "user_id": user_id,
-        "nutrient": nutrient,
-        "fertilizer_name": fertilizer,
-        "dosage": amount,
-        "status": "recommended"
-    }
-    
-    result = supabase.table("fertilizer_logs").insert(log_data).execute()
-    
-    return {
-        "log_id": result.data[0]["id"] if result.data else None,
-        "fertilizer": fertilizer,
-        "amount": amount,
-        "application_method": "Broadcast and incorporate into soil",
-        "recommendations": [
-            f"Apply {amount} of {fertilizer}",
-            "Apply during soil preparation",
-            "Water immediately after application"
-        ]
-    }
+NUTRIENTS_PATH = os.path.join(
+    os.path.dirname(__file__), "../../../../data/crop_nutrients.json"
+)
 
+def load_crop_nutrients():
+    try:
+        with open(NUTRIENTS_PATH) as f:
+            data = json.load(f)
+        logger.info(f"Loaded crop nutrients for {len(data)} crops from {NUTRIENTS_PATH}")
+        return data
+    except Exception as e:
+        logger.error(f"Failed to load crop_nutrients.json: {e}")
+        return {"default": {"N": 80, "P": 40, "K": 40}}
 
-def calculate_fertilizer_amount(soil_type: str, crop_type: str, npk_values: dict) -> str:
-    """
-    Calculate recommended fertilizer amount
-    """
-    # Placeholder calculation
-    base_amount = 50  # kg/acre
-    
-    # Adjust based on soil type
-    soil_multiplier = {"clay": 1.2, "loam": 1.0, "sandy": 0.8}.get(soil_type.lower(), 1.0)
-    
-    # Adjust based on crop
-    crop_multiplier = {"rice": 1.1, "wheat": 1.0, "cotton": 1.3}.get(crop_type.lower(), 1.0)
-    
-    final_amount = base_amount * soil_multiplier * crop_multiplier
-    
-    return f"{final_amount:.1f} kg/acre"
+CROP_NUTRIENTS = load_crop_nutrients()
 
+FERTILIZER_MAP = {
+    "N": {
+        "name": "Urea",
+        "very_deficient_dose": "80 kg/acre",
+        "deficient_dose":      "50 kg/acre",
+        "sufficient_dose":     "none needed",
+    },
+    "P": {
+        "name": "DAP (Di-Ammonium Phosphate)",
+        "very_deficient_dose": "50 kg/acre",
+        "deficient_dose":      "25 kg/acre",
+        "sufficient_dose":     "none needed",
+    },
+    "K": {
+        "name": "MOP (Muriate of Potash)",
+        "very_deficient_dose": "40 kg/acre",
+        "deficient_dose":      "20 kg/acre",
+        "sufficient_dose":     "none needed",
+    },
+}
 
-def get_application_method(fertilizer_type: str) -> str:
-    """
-    Get recommended application method for fertilizer
-    """
-    methods = {
-        "urea": "Broadcast and incorporate into soil before planting",
-        "dap": "Apply during soil preparation and mix well",
-        "muriate of potash": "Broadcast evenly and water immediately",
-        "compost": "Mix with soil during land preparation"
-    }
-    
-    return methods.get(fertilizer_type.lower(), "Follow manufacturer's instructions")
+def recommend_fertilizer(data, user_id: str, scan_id: str = None) -> dict:
+    logger.info(f"recommend_fertilizer — crop={data.crop} N={data.N} P={data.P} K={data.K}")
+
+    crop_key = data.crop.lower().strip()
+    ideal = CROP_NUTRIENTS.get(crop_key, CROP_NUTRIENTS.get("default", {"N": 80, "P": 40, "K": 40}))
+
+    logger.info(f"Using ICAR ideals for '{crop_key}': N={ideal['N']} P={ideal['P']} K={ideal['K']}")
+
+    deficiencies = []
+
+    for nutrient in ["N", "P", "K"]:
+        actual = float(getattr(data, nutrient))
+        target = float(ideal[nutrient])
+        fert   = FERTILIZER_MAP[nutrient]
+
+        if actual < target * 0.5:
+            status = "very deficient"
+            dosage = fert["very_deficient_dose"]
+        elif actual < target:
+            status = "deficient"
+            dosage = fert["deficient_dose"]
+        else:
+            status = "sufficient"
+            dosage = fert["sufficient_dose"]
+
+        deficiencies.append({
+            "nutrient":     nutrient,
+            "fertilizer":   fert["name"],
+            "dosage":       dosage,
+            "status":       status,
+            "actual_value": actual,
+            "ideal_value":  target,
+            "source":       ideal.get("source", "ICAR"),
+        })
+
+        logger.info(f"  {nutrient}: actual={actual} ideal={target} status={status}")
+
+    try:
+        for d in deficiencies:
+            supabase.table("fertilizer_logs").insert({
+                "user_id":         str(user_id),
+                "scan_id":         str(scan_id) if scan_id else None,
+                "nutrient":        d["nutrient"],
+                "fertilizer_name": d["fertilizer"],
+                "dosage":          d["dosage"],
+                "status":          d["status"],
+            }).execute()
+        logger.info(f"Saved {len(deficiencies)} fertilizer logs to Supabase")
+    except Exception as e:
+        logger.error(f"Failed to save fertilizer logs: {e}")
+
+    return {"deficiencies": deficiencies}

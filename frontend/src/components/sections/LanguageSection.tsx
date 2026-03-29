@@ -1,4 +1,5 @@
 import { Lang, TRANSLATIONS } from '@/lib/translations';
+import { setLang } from '@/lib/store';
 
 interface Props {
   currentLang: Lang;
@@ -12,6 +13,11 @@ const LANGS: { code: Lang; name: string; sample: string }[] = [
 ];
 
 export default function LanguageSection({ currentLang, onSelect }: Props) {
+  const handleSelect = (lang: Lang) => {
+    setLang(lang);
+    onSelect(lang);
+  };
+
   return (
     <div>
       <h2 className="font-heading text-2xl font-bold mb-6">{TRANSLATIONS[currentLang].languageTitle}</h2>
@@ -21,7 +27,7 @@ export default function LanguageSection({ currentLang, onSelect }: Props) {
             <div className="font-heading text-2xl font-bold mb-3">{l.name}</div>
             <p className="text-sm text-muted-foreground mb-4 leading-relaxed">{l.sample}</p>
             <button
-              onClick={() => onSelect(l.code)}
+              onClick={() => handleSelect(l.code)}
               className={`px-6 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
                 currentLang === l.code ? 'bg-primary text-primary-foreground' : 'bg-muted text-foreground hover:bg-accent hover:text-accent-foreground'
               }`}

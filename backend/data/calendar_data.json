@@ -1,0 +1,146 @@
+{
+  "rice": {
+    "season": "Kharif",
+    "duration_days": 120,
+    "tasks": [
+      {"month": 6,  "week": 1, "task": "Nursery preparation and sowing",       "type": "sow"},
+      {"month": 7,  "week": 1, "task": "Transplanting seedlings",               "type": "sow"},
+      {"month": 7,  "week": 2, "task": "Apply basal fertilizer (NPK)",          "type": "fertilize"},
+      {"month": 7,  "week": 3, "task": "First irrigation after transplanting",  "type": "irrigate"},
+      {"month": 8,  "week": 1, "task": "Weed management — first weeding",       "type": "maintain"},
+      {"month": 8,  "week": 2, "task": "Top dressing with Urea",                "type": "fertilize"},
+      {"month": 8,  "week": 3, "task": "Pest monitoring — check for BPH",       "type": "maintain"},
+      {"month": 9,  "week": 1, "task": "Second top dressing — Urea",            "type": "fertilize"},
+      {"month": 9,  "week": 2, "task": "Maintain flood irrigation",             "type": "irrigate"},
+      {"month": 10, "week": 1, "task": "Drain field 2 weeks before harvest",    "type": "irrigate"},
+      {"month": 10, "week": 3, "task": "Harvest when 80% grains are golden",   "type": "harvest"},
+      {"month": 11, "week": 1, "task": "Threshing and drying grains",           "type": "harvest"}
+    ]
+  },
+  "wheat": {
+    "season": "Rabi",
+    "duration_days": 120,
+    "tasks": [
+      {"month": 11, "week": 1, "task": "Field preparation — deep ploughing",    "type": "maintain"},
+      {"month": 11, "week": 2, "task": "Sowing — 100 kg seed/hectare",          "type": "sow"},
+      {"month": 11, "week": 3, "task": "Apply basal dose NPK at sowing",        "type": "fertilize"},
+      {"month": 12, "week": 1, "task": "First irrigation — Crown Root Init",    "type": "irrigate"},
+      {"month": 12, "week": 2, "task": "First top dressing — half Urea dose",   "type": "fertilize"},
+      {"month": 1,  "week": 1, "task": "Second irrigation — tillering stage",   "type": "irrigate"},
+      {"month": 1,  "week": 2, "task": "Weed management — second weeding",      "type": "maintain"},
+      {"month": 2,  "week": 1, "task": "Third irrigation — jointing stage",     "type": "irrigate"},
+      {"month": 2,  "week": 2, "task": "Second top dressing — remaining Urea",  "type": "fertilize"},
+      {"month": 3,  "week": 1, "task": "Fourth irrigation — flowering stage",   "type": "irrigate"},
+      {"month": 3,  "week": 3, "task": "Monitor for rust disease",              "type": "maintain"},
+      {"month": 4,  "week": 1, "task": "Fifth irrigation — grain filling",      "type": "irrigate"},
+      {"month": 4,  "week": 3, "task": "Harvest when moisture below 20%",       "type": "harvest"}
+    ]
+  },
+  "maize": {
+    "season": "Kharif",
+    "duration_days": 90,
+    "tasks": [
+      {"month": 6,  "week": 1, "task": "Field preparation and soil treatment",  "type": "maintain"},
+      {"month": 6,  "week": 2, "task": "Sowing — 20 kg seed/hectare",           "type": "sow"},
+      {"month": 6,  "week": 3, "task": "Apply basal NPK fertilizer",            "type": "fertilize"},
+      {"month": 7,  "week": 1, "task": "First irrigation if no rain",           "type": "irrigate"},
+      {"month": 7,  "week": 2, "task": "Weed management — first weeding",       "type": "maintain"},
+      {"month": 7,  "week": 3, "task": "Top dressing — first Urea dose",        "type": "fertilize"},
+      {"month": 8,  "week": 1, "task": "Monitor for fall armyworm in whorl",    "type": "maintain"},
+      {"month": 8,  "week": 2, "task": "Second top dressing — remaining Urea",  "type": "fertilize"},
+      {"month": 8,  "week": 3, "task": "Critical irrigation at tasselling",     "type": "irrigate"},
+      {"month": 9,  "week": 2, "task": "Harvest when husks turn brown",         "type": "harvest"}
+    ]
+  },
+  "cotton": {
+    "season": "Kharif",
+    "duration_days": 180,
+    "tasks": [
+      {"month": 5,  "week": 2, "task": "Deep summer ploughing",                 "type": "maintain"},
+      {"month": 6,  "week": 1, "task": "Sowing after first rain",               "type": "sow"},
+      {"month": 6,  "week": 2, "task": "Apply basal dose — P and K",            "type": "fertilize"},
+      {"month": 7,  "week": 1, "task": "Gap filling and thinning",              "type": "maintain"},
+      {"month": 7,  "week": 2, "task": "First irrigation if dry",               "type": "irrigate"},
+      {"month": 7,  "week": 3, "task": "First top dressing — Urea",             "type": "fertilize"},
+      {"month": 8,  "week": 1, "task": "Weed management — intercultivation",    "type": "maintain"},
+      {"month": 8,  "week": 2, "task": "Monitor for bollworm, set pheromone traps","type":"maintain"},
+      {"month": 9,  "week": 1, "task": "Second Urea top dressing",              "type": "fertilize"},
+      {"month": 10, "week": 1, "task": "First picking of open bolls",           "type": "harvest"},
+      {"month": 11, "week": 1, "task": "Second picking",                        "type": "harvest"},
+      {"month": 12, "week": 1, "task": "Final picking and field clearance",     "type": "harvest"}
+    ]
+  },
+  "banana": {
+    "season": "Annual",
+    "duration_days": 365,
+    "tasks": [
+      {"month": 6,  "week": 1, "task": "Pit digging and FYM application",       "type": "maintain"},
+      {"month": 6,  "week": 2, "task": "Planting suckers or tissue culture",    "type": "sow"},
+      {"month": 7,  "week": 1, "task": "First irrigation after planting",       "type": "irrigate"},
+      {"month": 7,  "week": 2, "task": "Apply NPK fertilizer — first dose",     "type": "fertilize"},
+      {"month": 8,  "week": 1, "task": "Weed management and earthing up",       "type": "maintain"},
+      {"month": 9,  "week": 1, "task": "Second fertilizer dose — Urea",         "type": "fertilize"},
+      {"month": 10, "week": 1, "task": "Third fertilizer dose — K2O",           "type": "fertilize"},
+      {"month": 11, "week": 1, "task": "Propping with bamboo stakes",           "type": "maintain"},
+      {"month": 12, "week": 1, "task": "Remove dry leaves, check for weevil",   "type": "maintain"},
+      {"month": 2,  "week": 1, "task": "Bunch emergence — apply bunch cover",   "type": "maintain"},
+      {"month": 4,  "week": 1, "task": "Harvest when fingers are plump",        "type": "harvest"}
+    ]
+  },
+  "sugarcane": {
+    "season": "Annual",
+    "duration_days": 365,
+    "tasks": [
+      {"month": 2,  "week": 1, "task": "Field preparation — deep ploughing",    "type": "maintain"},
+      {"month": 2,  "week": 2, "task": "Planting setts with 3 buds",            "type": "sow"},
+      {"month": 2,  "week": 3, "task": "Apply basal NPK and FYM",               "type": "fertilize"},
+      {"month": 3,  "week": 1, "task": "First irrigation — 7 days after plant", "type": "irrigate"},
+      {"month": 4,  "week": 1, "task": "Gap filling and thinning",              "type": "maintain"},
+      {"month": 5,  "week": 1, "task": "First top dressing — Urea",             "type": "fertilize"},
+      {"month": 6,  "week": 1, "task": "Earthing up and trashing",              "type": "maintain"},
+      {"month": 7,  "week": 1, "task": "Second top dressing — Urea",            "type": "fertilize"},
+      {"month": 8,  "week": 1, "task": "Monitor for shoot borer and red rot",   "type": "maintain"},
+      {"month": 10, "week": 1, "task": "Stop irrigation 4 weeks before harvest","type": "irrigate"},
+      {"month": 12, "week": 1, "task": "Harvest — cut at ground level",         "type": "harvest"}
+    ]
+  },
+  "mungbean": {
+    "season": "Kharif/Zaid",
+    "duration_days": 65,
+    "tasks": [
+      {"month": 6,  "week": 1, "task": "Sow after first monsoon rain",          "type": "sow"},
+      {"month": 6,  "week": 1, "task": "Apply DAP @ 100 kg/ha as basal",        "type": "fertilize"},
+      {"month": 6,  "week": 2, "task": "First irrigation if dry",               "type": "irrigate"},
+      {"month": 7,  "week": 1, "task": "Weed management — first weeding",       "type": "maintain"},
+      {"month": 7,  "week": 2, "task": "Monitor for pod borer",                 "type": "maintain"},
+      {"month": 8,  "week": 1, "task": "Harvest when 70% pods turn black",      "type": "harvest"}
+    ]
+  },
+  "chickpea": {
+    "season": "Rabi",
+    "duration_days": 100,
+    "tasks": [
+      {"month": 10, "week": 3, "task": "Field preparation — fine tilth",        "type": "maintain"},
+      {"month": 11, "week": 1, "task": "Sowing — 75 kg seed/hectare",           "type": "sow"},
+      {"month": 11, "week": 1, "task": "Apply basal P and K fertilizer",        "type": "fertilize"},
+      {"month": 12, "week": 1, "task": "Pre-flowering irrigation if needed",    "type": "irrigate"},
+      {"month": 12, "week": 2, "task": "Monitor for pod borer — use pheromone", "type": "maintain"},
+      {"month": 1,  "week": 1, "task": "Pod filling irrigation",                "type": "irrigate"},
+      {"month": 2,  "week": 1, "task": "Harvest when leaves start drying",      "type": "harvest"}
+    ]
+  },
+  "default": {
+    "season": "Varies",
+    "duration_days": 120,
+    "tasks": [
+      {"month": 6,  "week": 1, "task": "Field preparation",                     "type": "maintain"},
+      {"month": 6,  "week": 2, "task": "Sowing / Planting",                     "type": "sow"},
+      {"month": 6,  "week": 3, "task": "Apply basal fertilizer",                "type": "fertilize"},
+      {"month": 7,  "week": 1, "task": "First irrigation",                      "type": "irrigate"},
+      {"month": 7,  "week": 2, "task": "Weed management",                       "type": "maintain"},
+      {"month": 8,  "week": 1, "task": "Top dressing fertilizer",               "type": "fertilize"},
+      {"month": 9,  "week": 1, "task": "Pest monitoring",                       "type": "maintain"},
+      {"month": 10, "week": 1, "task": "Harvest",                               "type": "harvest"}
+    ]
+  }
+}

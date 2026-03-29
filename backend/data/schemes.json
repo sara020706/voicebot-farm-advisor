@@ -2,31 +2,121 @@
   {
     "id": 1,
     "name": "PM-KISAN",
-    "type": "Direct Benefit Transfer",
-    "description": "Income support scheme providing ₹6000 per year to small and marginal farmers",
-    "benefit": "₹6000 per year in three installments",
+    "type": "Central",
+    "description": "Direct income support of Rs.6000 per year in three installments to farmer families.",
+    "benefit": "Rs.6,000/year",
     "applies_to": ["all"],
     "states": ["all"],
-    "link": "https://pmkisan.gov.in/"
+    "link": "https://pmkisan.gov.in"
   },
   {
     "id": 2,
-    "name": "Crop Insurance Scheme",
-    "type": "Insurance",
-    "description": "Provides insurance coverage for crop losses due to natural calamities",
-    "benefit": "Up to 100% coverage for crop losses",
-    "applies_to": ["rice", "wheat", "cotton", "sugarcane"],
+    "name": "PMFBY - Pradhan Mantri Fasal Bima Yojana",
+    "type": "Central",
+    "description": "Crop insurance scheme covering losses due to natural calamities, pests and diseases.",
+    "benefit": "Full sum insured",
+    "applies_to": ["all"],
     "states": ["all"],
-    "link": "https://pmfby.gov.in/"
+    "link": "https://pmfby.gov.in"
   },
   {
     "id": 3,
     "name": "Soil Health Card Scheme",
-    "type": "Advisory",
-    "description": "Provides soil testing and nutrient recommendations",
-    "benefit": "Free soil testing and fertilizer recommendations",
+    "type": "Central",
+    "description": "Free soil testing and health card with crop-wise nutrient recommendations for every farmer.",
+    "benefit": "Free soil testing",
     "applies_to": ["all"],
     "states": ["all"],
-    "link": "https://soilhealth.dac.gov.in/"
+    "link": "https://soilhealth.dac.gov.in"
+  },
+  {
+    "id": 4,
+    "name": "PM Kisan Maandhan Yojana",
+    "type": "Central",
+    "description": "Pension scheme for small and marginal farmers providing Rs.3000 per month after age 60.",
+    "benefit": "Rs.3,000/month pension",
+    "applies_to": ["all"],
+    "states": ["all"],
+    "link": "https://maandhan.in"
+  },
+  {
+    "id": 5,
+    "name": "Kisan Credit Card",
+    "type": "Central",
+    "description": "Affordable credit for seeds, fertilizers, equipment and other agricultural needs.",
+    "benefit": "Low interest credit",
+    "applies_to": ["all"],
+    "states": ["all"],
+    "link": "https://www.nabard.org"
+  },
+  {
+    "id": 6,
+    "name": "Rice MSP Procurement",
+    "type": "Central",
+    "description": "Government procurement of rice at Minimum Support Price with bonus incentives.",
+    "benefit": "MSP guarantee",
+    "applies_to": ["rice"],
+    "states": ["all"],
+    "link": "https://fci.gov.in"
+  },
+  {
+    "id": 7,
+    "name": "Wheat MSP Procurement",
+    "type": "Central",
+    "description": "Government procurement of wheat at Minimum Support Price.",
+    "benefit": "MSP guarantee",
+    "applies_to": ["wheat"],
+    "states": ["all"],
+    "link": "https://fci.gov.in"
+  },
+  {
+    "id": 8,
+    "name": "National Mission on Oilseeds",
+    "type": "Central",
+    "description": "Support for oilseed crop farmers including seeds, training and price support.",
+    "benefit": "Seeds + price support",
+    "applies_to": ["groundnut", "mustard", "sunflower", "soybean"],
+    "states": ["all"],
+    "link": "https://nmoop.gov.in"
+  },
+  {
+    "id": 9,
+    "name": "Tamil Nadu CM Farmer Security Scheme",
+    "type": "State",
+    "description": "Life insurance coverage of Rs.2 lakh for registered farmers in Tamil Nadu.",
+    "benefit": "Rs.2 lakh insurance",
+    "applies_to": ["all"],
+    "states": ["tamil nadu", "tamilnadu"],
+    "link": "https://www.tn.gov.in"
+  },
+  {
+    "id": 10,
+    "name": "Maharashtra Shetkari Sanman Yojana",
+    "type": "State",
+    "description": "Direct cash assistance to registered farmers in Maharashtra for agricultural inputs.",
+    "benefit": "Rs.6,000/year",
+    "applies_to": ["all"],
+    "states": ["maharashtra"],
+    "link": "https://krishi.maharashtra.gov.in"
+  },
+  {
+    "id": 11,
+    "name": "Karnataka Raitha Siri",
+    "type": "State",
+    "description": "Income support scheme for farmers in Karnataka providing direct financial assistance.",
+    "benefit": "Rs.5,000/year",
+    "applies_to": ["all"],
+    "states": ["karnataka"],
+    "link": "https://raitamitra.karnataka.gov.in"
+  },
+  {
+    "id": 12,
+    "name": "Andhra Pradesh YSR Rythu Bharosa",
+    "type": "State",
+    "description": "Investment support of Rs.13,500 per year to every agricultural family in Andhra Pradesh.",
+    "benefit": "Rs.13,500/year",
+    "applies_to": ["all"],
+    "states": ["andhra pradesh"],
+    "link": "https://ysrrythubharosa.ap.gov.in"
   }
 ]

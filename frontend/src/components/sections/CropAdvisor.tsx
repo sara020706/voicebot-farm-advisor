@@ -13,6 +13,7 @@ interface Props {
   lang: Lang;
   values: SoilValues;
   onChange: (v: SoilValues) => void;
+  onNav: (section: string) => void;
 }
 
 const SLIDERS: { key: keyof SoilValues; label: string; min: number; max: number; step: number }[] = [
@@ -25,7 +26,7 @@ const SLIDERS: { key: keyof SoilValues; label: string; min: number; max: number;
   { key: 'rainfall', label: 'RAINFALL mm', min: 0, max: 300, step: 1 },
 ];
 
-export default function CropAdvisor({ lang, values, onChange }: Props) {
+export default function CropAdvisor({ lang, values, onChange, onNav }: Props) {
   const t = TRANSLATIONS[lang];
   const { showToast } = useAppToast();
   const [loading, setLoading] = useState(false);
@@ -38,6 +39,7 @@ export default function CropAdvisor({ lang, values, onChange }: Props) {
     try {
       const data = await apiPredict(values);
       setResult(data);
+      localStorage.setItem('vb_last_crop', data.crop);
       addHistory({
         date: new Date().toLocaleDateString(),
         crop: data.crop,
@@ -86,6 +88,23 @@ export default function CropAdvisor({ lang, values, onChange }: Props) {
             <span className="text-sm font-medium">{(result.confidence * 100).toFixed(1)}%</span>
           </div>
           <p className="text-sm text-muted-foreground">Recommended based on your soil profile.</p>
+          <div style={{ display: 'flex', gap: '8px', marginTop: '1rem', flexWrap: 'wrap' }}>
+            <button onClick={() => onNav('yieldEstimator')}
+              style={{ padding: '6px 14px', borderRadius: '8px', border: '1px solid #c8e0ce',
+                       background: '#f4f9f6', color: '#1a4d2e', fontSize: '12px', cursor: 'pointer' }}>
+              View yield estimate →
+            </button>
+            <button onClick={() => onNav('pestLookup')}
+              style={{ padding: '6px 14px', borderRadius: '8px', border: '1px solid #c8e0ce',
+                       background: '#f4f9f6', color: '#1a4d2e', fontSize: '12px', cursor: 'pointer' }}>
+              Pest & disease guide →
+            </button>
+            <button onClick={() => onNav('cropCalendar')}
+              style={{ padding: '6px 14px', borderRadius: '8px', border: '1px solid #c8e0ce',
+                       background: '#f4f9f6', color: '#1a4d2e', fontSize: '12px', cursor: 'pointer' }}>
+              Planting calendar →
+            </button>
+          </div>
         </div>
       )}
     </div>

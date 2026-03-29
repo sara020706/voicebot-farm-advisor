@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Lang, TRANSLATIONS } from '@/lib/translations';
 import { Spinner } from '@/components/Spinner';
 import { useAppToast } from '@/components/Toast';
@@ -6,7 +6,6 @@ import { apiFertilizer } from '@/lib/api';
 
 interface Props {
   lang: Lang;
-  lastCrop: string;
 }
 
 interface Deficiency {
@@ -22,17 +21,28 @@ const COLORS: Record<string, string> = {
   K: 'border-blue-300 bg-blue-50',
 };
 
-export default function FertilizerSection({ lang, lastCrop }: Props) {
+export default function FertilizerSection({ lang }: Props) {
   const t = TRANSLATIONS[lang];
   const { showToast } = useAppToast();
   const [N, setN] = useState(50);
   const [P, setP] = useState(50);
   const [K, setK] = useState(50);
-  const [crop, setCrop] = useState(lastCrop);
+  const [crop, setCrop] = useState('');
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<Deficiency[]>([]);
 
+  useEffect(() => {
+    const lastCrop = localStorage.getItem('vb_last_crop');
+    if (lastCrop) {
+      setCrop(lastCrop);
+    }
+  }, []);
+
   const submit = async () => {
+    if (!crop.trim()) {
+      showToast('Please enter crop name', 'error');
+      return;
+    }
     setLoading(true);
     try {
       const data = await apiFertilizer({ N, P, K, crop });
@@ -61,7 +71,21 @@ export default function FertilizerSection({ lang, lastCrop }: Props) {
       </div>
 
       <label className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-1 block">Current Crop</label>
-      <input className="vb-input w-full mb-6" value={crop} onChange={e => setCrop(e.target.value)} placeholder="Rice" />
+      <select className="vb-input w-full mb-6" value={crop} onChange={e => setCrop(e.target.value)}>
+        <option value="">Select a crop</option>
+        <option value="Rice">Rice</option>
+        <option value="Wheat">Wheat</option>
+        <option value="Maize">Maize</option>
+        <option value="Cotton">Cotton</option>
+        <option value="Sugarcane">Sugarcane</option>
+        <option value="Groundnut">Groundnut</option>
+        <option value="Soybean">Soybean</option>
+        <option value="Tomato">Tomato</option>
+        <option value="Potato">Potato</option>
+        <option value="Onion">Onion</option>
+        <option value="Chickpea">Chickpea</option>
+        <option value="Pigeon Pea">Pigeon Pea</option>
+      </select>
 
       <button onClick={submit} disabled={loading} className="vb-btn-primary w-full">
         {loading ? <Spinner /> : 'Get Fertilizer Plan →'}

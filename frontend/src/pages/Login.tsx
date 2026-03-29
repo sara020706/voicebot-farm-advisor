@@ -17,6 +17,10 @@ export default function Login({ onLogin, onGoRegister }: Props) {
   const { showToast } = useAppToast();
 
   const handleLogin = async () => {
+    if (!email || !password) {
+      showToast('Please enter email and password', 'error');
+      return;
+    }
     setLoading(true);
     try {
       const data = await apiLogin(email, password);
@@ -31,11 +35,6 @@ export default function Login({ onLogin, onGoRegister }: Props) {
     }
   };
 
-  const quickDemo = () => {
-    setEmail('demo@voicebot.in');
-    setPassword('demo123');
-  };
-
   return (
     <div className="min-h-screen grid md:grid-cols-2">
       <div className="flex flex-col items-center justify-center p-8 md:p-16">
@@ -44,41 +43,34 @@ export default function Login({ onLogin, onGoRegister }: Props) {
           <p className="text-muted-foreground text-sm mb-10 italic">Your voice. Your soil. Your harvest.</p>
 
           <label className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-1 block">Email</label>
-          <input type="email" className="vb-input w-full mb-4" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@example.com" />
+          <input 
+            type="email" 
+            className="vb-input w-full mb-4" 
+            value={email} 
+            onChange={e => setEmail(e.target.value)} 
+            placeholder="you@example.com"
+            disabled={loading}
+            onKeyDown={e => e.key === 'Enter' && handleLogin()}
+          />
 
           <label className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-1 block">Password</label>
-          <input type="password" className="vb-input w-full mb-6" value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" />
+          <input 
+            type="password" 
+            className="vb-input w-full mb-6" 
+            value={password} 
+            onChange={e => setPassword(e.target.value)} 
+            placeholder="••••••••"
+            disabled={loading}
+            onKeyDown={e => e.key === 'Enter' && handleLogin()}
+          />
 
           <button onClick={handleLogin} disabled={loading} className="vb-btn-primary w-full">
             {loading ? <Spinner /> : 'Sign In'}
           </button>
 
-          <div className="flex justify-between mt-4 text-sm">
+          <div className="flex justify-center mt-4 text-sm">
             <button onClick={onGoRegister} className="text-accent hover:underline">Create account</button>
-            <button onClick={quickDemo} className="text-muted-foreground hover:underline">Quick Demo</button>
           </div>
-
-          <button
-            onClick={async () => {
-              setLoading(true);
-              try {
-                // Try to login with demo account
-                const data = await apiLogin('demo@voicebot.in', 'demo123');
-                setToken(data.token);
-                setUser(data.user);
-                showToast('Demo mode activated!', 'success');
-                onLogin();
-              } catch (e: any) {
-                showToast('Demo account not found. Please register first.', 'error');
-              } finally {
-                setLoading(false);
-              }
-            }}
-            disabled={loading}
-            className="mt-6 w-full h-12 rounded-xl border border-border text-foreground font-medium transition-all duration-200 hover:bg-muted disabled:opacity-50"
-          >
-            {loading ? <Spinner /> : 'Demo Login →'}
-          </button>
         </div>
       </div>
       <AuthDecorPanel />

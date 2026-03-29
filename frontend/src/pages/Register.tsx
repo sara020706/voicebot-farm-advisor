@@ -20,9 +20,19 @@ export default function Register({ onRegister, onGoLogin }: Props) {
   const { showToast } = useAppToast();
 
   const handleRegister = async () => {
+    if (!name || !email || !password) {
+      showToast('Please fill in all required fields', 'error');
+      return;
+    }
     setLoading(true);
     try {
-      const data = await apiRegister(name, email, password, state, parseFloat(acres) || 0);
+      const data = await apiRegister({
+        name,
+        email,
+        password,
+        state: state || undefined,
+        acres: acres ? parseFloat(acres) : undefined
+      });
       setToken(data.token);
       setUser(data.user);
       showToast('Account created!', 'success');
@@ -43,19 +53,53 @@ export default function Register({ onRegister, onGoLogin }: Props) {
           <p className="text-muted-foreground text-sm mb-8 italic">Create your account</p>
 
           <label className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-1 block">Full Name</label>
-          <input className="vb-input w-full mb-3" value={name} onChange={e => setName(e.target.value)} placeholder="Ravi Kumar" />
+          <input 
+            className="vb-input w-full mb-3" 
+            value={name} 
+            onChange={e => setName(e.target.value)} 
+            placeholder="Ravi Kumar"
+            disabled={loading}
+          />
 
           <label className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-1 block">Email</label>
-          <input type="email" className="vb-input w-full mb-3" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@example.com" />
+          <input 
+            type="email" 
+            className="vb-input w-full mb-3" 
+            value={email} 
+            onChange={e => setEmail(e.target.value)} 
+            placeholder="you@example.com"
+            disabled={loading}
+          />
 
           <label className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-1 block">State</label>
-          <input className="vb-input w-full mb-3" value={state} onChange={e => setState(e.target.value)} placeholder="Maharashtra" />
+          <input 
+            className="vb-input w-full mb-3" 
+            value={state} 
+            onChange={e => setState(e.target.value)} 
+            placeholder="Maharashtra"
+            disabled={loading}
+          />
 
           <label className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-1 block">Land Size (acres)</label>
-          <input type="number" className="vb-input w-full mb-3" value={acres} onChange={e => setAcres(e.target.value)} placeholder="5" />
+          <input 
+            type="number" 
+            className="vb-input w-full mb-3" 
+            value={acres} 
+            onChange={e => setAcres(e.target.value)} 
+            placeholder="5"
+            disabled={loading}
+          />
 
           <label className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-1 block">Password</label>
-          <input type="password" className="vb-input w-full mb-6" value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" />
+          <input 
+            type="password" 
+            className="vb-input w-full mb-6" 
+            value={password} 
+            onChange={e => setPassword(e.target.value)} 
+            placeholder="••••••••"
+            disabled={loading}
+            onKeyDown={e => e.key === 'Enter' && handleRegister()}
+          />
 
           <button onClick={handleRegister} disabled={loading} className="vb-btn-primary w-full">
             {loading ? <Spinner /> : 'Create Account'}
