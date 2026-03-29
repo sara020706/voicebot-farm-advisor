@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { apiPredict, apiFertilizer } from "../../lib/api";
+import { apiPredict, apiFertilizer, apiAIExtract, apiAIExplain, apiAIFollowup } from "../../lib/api";
 import { getLang, addToHistory } from "../../lib/store";
 
 interface VoiceInputProps {
@@ -8,6 +8,7 @@ interface VoiceInputProps {
 }
 
 interface SoilValues {
+  [key: string]: number | undefined;
   N?: number;
   P?: number;
   K?: number;
@@ -23,120 +24,14 @@ interface Message {
   timestamp: Date;
 }
 
-interface ClaudeResponse {
-  extracted: SoilValues;
-  missing: string[];
-  followup: string;
-  lang: string;
-  complete: boolean;
+interface AIResponse {
+  extracted?: SoilValues;
+  missing?: string[];
+  followup?: string;
+  lang?: string;
+  complete?: boolean;
   explanation?: string;
-}
-
-async function callClaude(
-  messages: Array<{ role: string; content: string }>,
-  currentValues: SoilValues,
-  mode: "extract" | "explain",
-  predictionResult?: { crop: string; confidence: number; deficiencies: any[] }
-): Promise<ClaudeResponse> {
-  const systemPrompt = mode === "extract" ? `
-You are a multilingual agricultural soil advisor for Indian farmers. Your job is to extract soil parameters from natural farmer speech and ask for missing ones.
-
-Current collected values: ${JSON.stringify(currentValues)}
-
-RULES:
-1. Detect the language the farmer is using (en, hi, ta) and ALWAYS respond in that same language
-2. Extract these 7 values from speech: N (Nitrogen 0-140), P (Phosphorus 0-140), K (Potassium 0-140), pH (0-14), temperature (Celsius), humidity (%), rainfall (mm)
-3. Convert descriptive language to numbers:
-   - "low nitrogen" / "नाइट्रोजन कम है" / "நைட்ரஜன் குறைவு" → N: 25
-   - "high nitrogen" → N: 100
-   - "dry soil" / "मिट्टी सूखी है" → humidity: 25
-   - "very rainy area" → rainfall: 250
-   - "hot climate" → temperature: 35
-   - "normal/medium" for any value → use midpoint of range
-4. Only ask for values that are genuinely missing — do not re-ask for collected values
-5. Ask for maximum 2-3 missing values at once — do not overwhelm
-6. Be conversational and friendly — speak like a local agricultural advisor
-7. If farmer seems confused, explain what the value means simply
-
-Return ONLY valid JSON with this exact structure:
-{
-  "extracted": {"N": number|null, "P": number|null, "K": number|null, "pH": number|null, "temperature": number|null, "humidity": number|null, "rainfall": number|null},
-  "missing": ["list of still missing field names"],
-  "followup": "next question to ask farmer in their language",
-  "lang": "en|hi|ta",
-  "complete": true|false
-}
-
-Return null for values not yet provided. Do not include extracted values in missing array.
-` : `
-You are a multilingual agricultural advisor explaining crop recommendations to Indian farmers. Always respond in the same language the farmer has been using: ${getLang() === 'hi' ? 'Hindi' : getLang() === 'ta' ? 'Tamil' : 'English'}
-
-Prediction result: ${JSON.stringify(predictionResult)}
-Soil values used: ${JSON.stringify(currentValues)}
-
-Generate a warm, helpful explanation that covers:
-1. Which crop was recommended and confidence level
-2. Why this crop suits their soil (mention 2-3 specific reasons from their soil values)
-3. Key fertilizer recommendation (most deficient nutrient)
-4. Best planting season for this crop in India
-5. One practical tip for this crop
-
-Keep it conversational — speak like a knowledgeable local farmer would. Maximum 4-5 sentences. Do not use technical jargon.
-
-Also after the explanation add: "क्या आप कुछ और जानना चाहते हैं?" (or equivalent in their language) to invite follow-up questions.
-
-Return ONLY valid JSON:
-{
-  "explanation": "full explanation in farmer's language",
-  "lang": "en|hi|ta",
-  "complete": true
-}
-`;
-
-  const ANTHROPIC_API_KEY = import.meta.env.VITE_ANTHROPIC_API_KEY || "";
-
-  const response = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-api-key": ANTHROPIC_API_KEY,
-      "anthropic-version": "2023-06-01"
-    },
-    body: JSON.stringify({
-      model: "claude-sonnet-4-20250514",
-      max_tokens: 1000,
-      system: systemPrompt,
-      messages: messages.map(m => ({ role: m.role, content: m.content }))
-    })
-  });
-
-  if (!response.ok) {
-    throw new Error(`Claude API error: ${response.status}`);
-  }
-
-  const data = await response.json();
-  const text = data.content?.[0]?.text ?? "{}";
-
-  try {
-    const clean = text.replace(/```json\n?|\n?```/g, "").trim();
-    const parsed = JSON.parse(clean);
-    return {
-      extracted: parsed.extracted ?? {},
-      missing: parsed.missing ?? [],
-      followup: parsed.followup ?? parsed.explanation ?? "",
-      lang: parsed.lang ?? "en",
-      complete: parsed.complete ?? false,
-      explanation: parsed.explanation,
-    };
-  } catch {
-    return {
-      extracted: {},
-      missing: ["N", "P", "K", "pH", "temperature", "humidity", "rainfall"],
-      followup: "Could you please describe your soil conditions?",
-      lang: "en",
-      complete: false,
-    };
-  }
+  answer?: string;
 }
 
 function speak(text: string, lang: string) {
@@ -217,41 +112,41 @@ export default function VoiceInput({ onNavigate, lang: currentLang }: VoiceInput
 
     try {
       if (phase === "followup" && prediction) {
-        const response = await fetch("https://api.anthropic.com/v1/messages", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "x-api-key": import.meta.env.VITE_ANTHROPIC_API_KEY || "",
-            "anthropic-version": "2023-06-01"
-          },
-          body: JSON.stringify({
-            model: "claude-sonnet-4-20250514",
-            max_tokens: 500,
-            system: `You are a multilingual agricultural advisor. Answer questions about this crop recommendation in ${detectedLang === 'hi' ? 'Hindi' : detectedLang === 'ta' ? 'Tamil' : 'English'}.
-            
-Recommendation: ${prediction.crop} with ${prediction.confidence}% confidence.
-Soil: ${JSON.stringify(soilValues)}
-Fertilizer advice: ${JSON.stringify(deficiencies)}
-Keep answers short, practical, and in simple language a farmer would understand.`,
-            messages: updatedHistory
-          })
+        // Call backend AI followup endpoint
+        const result = await apiAIFollowup({
+          question: userText,
+          crop: prediction.crop,
+          confidence: prediction.confidence,
+          soil_values: soilValues as Record<string, number>,
+          deficiencies: deficiencies,
+          conversation_history: updatedHistory,
+          detected_lang: detectedLang
         });
-        const data = await response.json();
-        const answer = data.content?.[0]?.text ?? "I could not process that question.";
+        
+        const answer = result.answer || "I could not process that question.";
         addMessage("assistant", answer);
         setConversationHistory([...updatedHistory, { role: "assistant", content: answer }]);
         speak(answer, detectedLang);
         setStatus("Tap mic to ask another question");
       } else {
-        const result = await callClaude(updatedHistory, soilValues, "extract");
-        setDetectedLang(result.lang);
+        // Call backend AI extract endpoint
+        const result = await apiAIExtract({
+          user_message: userText,
+          conversation_history: updatedHistory,
+          current_values: soilValues,
+          detected_lang: detectedLang
+        });
+        
+        setDetectedLang(result.lang || detectedLang);
 
         const newValues = { ...soilValues };
-        Object.entries(result.extracted).forEach(([key, value]) => {
-          if (value !== null && value !== undefined && (newValues as any)[key] === undefined) {
-            (newValues as any)[key] = value;
-          }
-        });
+        if (result.extracted) {
+          Object.entries(result.extracted).forEach(([key, value]) => {
+            if (value !== null && value !== undefined && (newValues as any)[key] === undefined) {
+              (newValues as any)[key] = value;
+            }
+          });
+        }
         setSoilValues(newValues);
 
         const collectedFields = Object.keys(newValues).filter(k => (newValues as any)[k] !== undefined);
@@ -259,11 +154,12 @@ Keep answers short, practical, and in simple language a farmer would understand.
         const stillMissing = allFields.filter(f => (newValues as any)[f] === undefined);
 
         if (stillMissing.length === 0) {
-          addMessage("assistant", result.followup || "Great! I have all the information. Analyzing your soil now...");
-          setConversationHistory([...updatedHistory, { role: "assistant", content: result.followup || "" }]);
-          await runPrediction(newValues, result.lang);
+          const followupMsg = result.followup || "Great! I have all the information. Analyzing your soil now...";
+          addMessage("assistant", followupMsg);
+          setConversationHistory([...updatedHistory, { role: "assistant", content: followupMsg }]);
+          await runPrediction(newValues, result.lang || detectedLang);
         } else {
-          const followupText = result.followup;
+          const followupText = result.followup || "Could you please provide more information?";
           addMessage("assistant", followupText);
           const newHistory = [...updatedHistory, { role: "assistant", content: followupText }];
           setConversationHistory(newHistory);
@@ -271,12 +167,12 @@ Keep answers short, practical, and in simple language a farmer would understand.
           setStatus(`Collected: ${collectedFields.join(", ")} · Need: ${stillMissing.join(", ")}`);
 
           setIsSpeaking(true);
-          speak(followupText, result.lang);
+          speak(followupText, result.lang || detectedLang);
           setTimeout(() => setIsSpeaking(false), 3000);
         }
       }
     } catch (err: any) {
-      const errorMsg = "Sorry, I had trouble understanding that. Please try again.";
+      const errorMsg = err.message || "Sorry, I had trouble understanding that. Please try again.";
       addMessage("assistant", errorMsg);
       setStatus("Error — tap mic to retry");
       speak(errorMsg, detectedLang);
@@ -341,21 +237,24 @@ Keep answers short, practical, and in simple language a farmer would understand.
     setStatus("Generating explanation...");
 
     try {
-      const result = await callClaude(
-        [{ role: "user", content: `Explain the recommendation for ${pred.crop}` }],
-        values,
-        "explain",
-        { crop: pred.crop, confidence: pred.confidence, deficiencies: defic }
-      );
+      // Call backend AI explain endpoint
+      const result = await apiAIExplain({
+        crop: pred.crop,
+        confidence: pred.confidence,
+        soil_values: values as Record<string, number>,
+        deficiencies: defic,
+        detected_lang: lang
+      });
 
-      addMessage("assistant", result.explanation ?? result.followup);
+      const explanation = result.explanation || `${pred.crop} is recommended for your soil with ${pred.confidence}% confidence.`;
+      addMessage("assistant", explanation);
       setConversationHistory(prev => [...prev, {
         role: "assistant",
-        content: result.explanation ?? result.followup
+        content: explanation
       }]);
 
       setIsSpeaking(true);
-      speak(result.explanation ?? result.followup, lang);
+      speak(explanation, lang);
 
       setTimeout(() => {
         setIsSpeaking(false);

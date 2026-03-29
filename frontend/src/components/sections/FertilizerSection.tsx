@@ -71,7 +71,21 @@ export default function FertilizerSection({ lang }: Props) {
       </div>
 
       <label className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-1 block">Current Crop</label>
-      <input className="vb-input w-full mb-6" value={crop} onChange={e => setCrop(e.target.value)} placeholder="Rice" />
+      <select className="vb-input w-full mb-6" value={crop} onChange={e => setCrop(e.target.value)}>
+        <option value="">Select a crop</option>
+        <option value="Rice">Rice</option>
+        <option value="Wheat">Wheat</option>
+        <option value="Maize">Maize</option>
+        <option value="Cotton">Cotton</option>
+        <option value="Sugarcane">Sugarcane</option>
+        <option value="Groundnut">Groundnut</option>
+        <option value="Soybean">Soybean</option>
+        <option value="Tomato">Tomato</option>
+        <option value="Potato">Potato</option>
+        <option value="Onion">Onion</option>
+        <option value="Chickpea">Chickpea</option>
+        <option value="Pigeon Pea">Pigeon Pea</option>
+      </select>
 
       <button onClick={submit} disabled={loading} className="vb-btn-primary w-full">
         {loading ? <Spinner /> : 'Get Fertilizer Plan →'}

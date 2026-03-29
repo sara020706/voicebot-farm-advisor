@@ -1,0 +1,62 @@
+{
+  "rice": [
+    {"name":"Brown Planthopper","symptoms":"Yellowing and drying of plants, honeydew deposits","treatment":"Spray Imidacloprid 17.8 SL @ 125 ml/ha or use resistant varieties","type":"insect"},
+    {"name":"Blast Disease","symptoms":"Diamond-shaped lesions on leaves, neck rot","treatment":"Spray Tricyclazole 75 WP @ 600 g/ha, avoid excess nitrogen","type":"fungal"},
+    {"name":"Stem Borer","symptoms":"Dead heart in vegetative stage, white ear in reproductive stage","treatment":"Apply Carbofuran 3G @ 25 kg/ha or light trap for adults","type":"insect"},
+    {"name":"Bacterial Leaf Blight","symptoms":"Watery stripes on leaf margins turning yellow then brown","treatment":"Spray Copper Oxychloride 50 WP @ 3 g/litre, avoid waterlogging","type":"bacterial"}
+  ],
+  "wheat": [
+    {"name":"Rust (Yellow/Brown)","symptoms":"Orange or yellow powdery pustules on leaves","treatment":"Spray Propiconazole 25 EC @ 500 ml/ha at first appearance","type":"fungal"},
+    {"name":"Aphids","symptoms":"Curling leaves, sticky honeydew, black sooty mould","treatment":"Spray Dimethoate 30 EC @ 1 litre/ha or use natural enemies","type":"insect"},
+    {"name":"Karnal Bunt","symptoms":"Black powdery mass replacing grain, fishy smell","treatment":"Treat seed with Carboxin 37.5% + Thiram 37.5% @ 3 g/kg seed","type":"fungal"},
+    {"name":"Loose Smut","symptoms":"Grains replaced by black powder, spike destruction","treatment":"Hot water seed treatment at 52°C for 10 minutes","type":"fungal"}
+  ],
+  "maize": [
+    {"name":"Fall Armyworm","symptoms":"Ragged holes in leaves, sawdust-like frass in whorl","treatment":"Spray Emamectin Benzoate 5 SG @ 400 g/ha into whorl","type":"insect"},
+    {"name":"Corn Borer","symptoms":"Holes in stem, dead heart, broken tassels","treatment":"Apply Chlorpyrifos granules @ 10 kg/ha in whorl","type":"insect"},
+    {"name":"Downy Mildew","symptoms":"White powdery growth on lower leaf surface, chlorosis","treatment":"Spray Metalaxyl 35 WS or Ridomil @ 2 g/litre","type":"fungal"},
+    {"name":"Turcicum Blight","symptoms":"Large elliptical grey-green lesions with wavy margins","treatment":"Spray Mancozeb 75 WP @ 2 g/litre at 10-day intervals","type":"fungal"}
+  ],
+  "cotton": [
+    {"name":"Bollworm","symptoms":"Holes in bolls, shedding of squares and bolls","treatment":"Spray Spinosad 45 SC @ 160 ml/ha, use pheromone traps","type":"insect"},
+    {"name":"Whitefly","symptoms":"Yellowing leaves, virus transmission, honeydew deposits","treatment":"Spray Acetamiprid 20 SP @ 200 g/ha, avoid broad-spectrum pesticides","type":"insect"},
+    {"name":"Root Rot","symptoms":"Wilting, reddish-brown discolouration of roots","treatment":"Drench Copper Oxychloride @ 3 g/litre, improve drainage","type":"fungal"},
+    {"name":"Jassids","symptoms":"Leaf curl, yellowing from margins, stunted growth","treatment":"Spray Imidacloprid 200 SL @ 100 ml/ha","type":"insect"}
+  ],
+  "banana": [
+    {"name":"Panama Wilt","symptoms":"Yellowing of older leaves, brown vascular discolouration","treatment":"No chemical cure — use resistant varieties, soil solarisation","type":"fungal"},
+    {"name":"Sigatoka Disease","symptoms":"Yellow streaks on leaves turning brown, leaf death","treatment":"Spray Propiconazole 25 EC @ 1 ml/litre at 3-week intervals","type":"fungal"},
+    {"name":"Banana Weevil","symptoms":"Tunnelling in corm, plant toppling, reduced yield","treatment":"Apply Chlorpyrifos 20 EC @ 50 ml per plant in soil","type":"insect"},
+    {"name":"Bunchy Top Virus","symptoms":"Small bunched leaves at top, dark green streaks on midrib","treatment":"No cure — rogue affected plants, control aphid vectors","type":"viral"}
+  ],
+  "sugarcane": [
+    {"name":"Early Shoot Borer","symptoms":"Dead heart in early stage, characteristic smell","treatment":"Apply Chlorpyrifos granules @ 20 kg/ha, remove dead hearts","type":"insect"},
+    {"name":"Red Rot","symptoms":"Reddening of internal tissue with white patches, sour smell","treatment":"Use disease-free setts, treat with Carbendazim @ 1 g/litre","type":"fungal"},
+    {"name":"Woolly Aphid","symptoms":"White woolly masses on leaves and stems, yellowing","treatment":"Spray Dimethoate 30 EC @ 2 ml/litre or release Aphelinus parasitoid","type":"insect"},
+    {"name":"Smut","symptoms":"Black whip-like growth replacing the shoot","treatment":"Hot water treatment of setts at 50°C for 2 hours","type":"fungal"}
+  ],
+  "mango": [
+    {"name":"Mango Hopper","symptoms":"Nymphs and adults suck sap from inflorescences","treatment":"Spray Imidacloprid 200 SL @ 0.5 ml/litre before flowering","type":"insect"},
+    {"name":"Powdery Mildew","symptoms":"White powdery coating on flowers, fruits and leaves","treatment":"Spray Wettable Sulphur 80 WP @ 3 g/litre or Carbendazim","type":"fungal"},
+    {"name":"Anthracnose","symptoms":"Dark spots on fruits, flowers, and leaves; fruit rot","treatment":"Spray Copper Oxychloride @ 3 g/litre during flowering","type":"fungal"},
+    {"name":"Fruit Fly","symptoms":"Maggots inside fruit, premature fruit drop","treatment":"Use methyl eugenol traps, collect and destroy fallen fruits","type":"insect"}
+  ],
+  "tomato": [
+    {"name":"Early Blight","symptoms":"Dark concentric rings on lower leaves, defoliation","treatment":"Spray Mancozeb 75 WP @ 2.5 g/litre every 7-10 days","type":"fungal"},
+    {"name":"Fruit Borer","symptoms":"Circular holes in fruits, frass deposits","treatment":"Spray Spinosad 45 SC @ 160 ml/ha, use pheromone traps","type":"insect"},
+    {"name":"Leaf Curl Virus","symptoms":"Upward rolling of leaves, yellowing, stunted growth","treatment":"No cure — control whitefly vectors with Imidacloprid","type":"viral"},
+    {"name":"Bacterial Wilt","symptoms":"Sudden wilting, vascular browning, bacterial ooze","treatment":"Soil solarisation, crop rotation, avoid waterlogging","type":"bacterial"}
+  ],
+  "chickpea": [
+    {"name":"Pod Borer","symptoms":"Larvae bore into pods, flowers and stems","treatment":"Spray Indoxacarb 14.5 SC @ 500 ml/ha at pod formation","type":"insect"},
+    {"name":"Wilt","symptoms":"Sudden wilting of plants, brown vascular discolouration","treatment":"Use resistant varieties, treat seed with Trichoderma @ 4 g/kg","type":"fungal"},
+    {"name":"Blight","symptoms":"Water-soaked lesions, girdling of stem, plant death","treatment":"Spray Copper Oxychloride @ 3 g/litre, avoid wet conditions","type":"fungal"},
+    {"name":"Aphids","symptoms":"Curling of terminal shoots, yellowing, honeydew","treatment":"Spray Dimethoate 30 EC @ 2 ml/litre or Neem oil @ 5 ml/litre","type":"insect"}
+  ],
+  "default": [
+    {"name":"Aphids","symptoms":"Curling leaves, sticky deposits, yellowing","treatment":"Spray Dimethoate 30 EC @ 2 ml/litre or Neem oil @ 5 ml/litre","type":"insect"},
+    {"name":"Fungal Leaf Spot","symptoms":"Circular brown spots on leaves with yellow halo","treatment":"Spray Mancozeb 75 WP @ 2.5 g/litre every 10 days","type":"fungal"},
+    {"name":"Whitefly","symptoms":"White insects under leaves, yellowing, virus spread","treatment":"Spray Acetamiprid 20 SP @ 200 g/ha, use yellow sticky traps","type":"insect"},
+    {"name":"Root Rot","symptoms":"Wilting, yellowing, brown roots","treatment":"Improve drainage, drench Copper Oxychloride @ 3 g/litre","type":"fungal"}
+  ]
+}

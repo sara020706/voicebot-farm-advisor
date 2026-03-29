@@ -6,7 +6,10 @@ import Sidebar from '@/components/Sidebar';
 import Dashboard from '@/components/sections/Dashboard';
 import CropAdvisor, { SoilValues } from '@/components/sections/CropAdvisor';
 import FertilizerSection from '@/components/sections/FertilizerSection';
-import VoiceInput from '@/components/sections/VoiceInput';
+import FarmVoiceAssistant from '@/components/sections/FarmVoiceAssistant';
+import YieldEstimator from '@/components/sections/YieldEstimator';
+import PestLookup from '@/components/sections/PestLookup';
+import SeasonalCalendar from '@/components/sections/SeasonalCalendar';
 import LanguageSection from '@/components/sections/LanguageSection';
 import WeatherSection from '@/components/sections/WeatherSection';
 import CropHistory from '@/components/sections/CropHistory';
@@ -50,14 +53,20 @@ export default function Index() {
     switch (section) {
       case 'dashboard': 
         return <Dashboard lang={currentLang} onNavigate={setSection} />;
+      case 'voiceAssistant':
+        return <FarmVoiceAssistant />;
       case 'cropHistory': 
         return <CropHistory onNav={setSection} currentLang={currentLang} />;
       case 'cropAdvisor': 
-        return <CropAdvisor lang={currentLang} values={soilValues} onChange={setSoilValues} />;
+        return <CropAdvisor lang={currentLang} values={soilValues} onChange={setSoilValues} onNav={setSection} />;
       case 'fertilizer': 
         return <FertilizerSection lang={currentLang} />;
-      case 'voiceInput': 
-        return <VoiceInput lang={currentLang} onNavigate={setSection} />;
+      case 'yieldEstimator':
+        return <YieldEstimator currentLang={currentLang} onNav={setSection} />;
+      case 'pestLookup':
+        return <PestLookup currentLang={currentLang} onNav={setSection} />;
+      case 'cropCalendar':
+        return <SeasonalCalendar currentLang={currentLang} onNav={setSection} />;
       case 'language': 
         return <LanguageSection currentLang={currentLang} onSelect={handleLangChange} />;
       case 'weather': 
