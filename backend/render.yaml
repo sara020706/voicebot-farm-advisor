@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: voicebot-backend
+    env: python
+    region: oregon
+    plan: free
+    buildCommand: "cd cud_service && pip install -r requirements.txt"
+    startCommand: "cd cud_service && uvicorn app.main:app --host 0.0.0.0 --port $PORT"
+    envVars:
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_KEY
+        sync: false
+      - key: SECRET_KEY
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: WEATHER_API_KEY
+        sync: false
+      - key: PYTHON_VERSION
+        value: "3.11.0"
